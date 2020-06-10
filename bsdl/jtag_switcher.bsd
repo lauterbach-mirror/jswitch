@@ -1,0 +1,129 @@
+-- The MIT License
+--
+-- Copyright (c) 2020 Lauterbach GmbH, Alexander Merkle
+--
+-- Permission is hereby granted, free of charge,
+-- to any person obtaining a copy of this software and
+-- associated documentation files (the "Software"), to
+-- deal in the Software without restriction, including
+-- without limitation the rights to use, copy, modify,
+-- merge, publish, distribute, sublicense, and/or sell
+-- copies of the Software, and to permit persons to whom
+-- the Software is furnished to do so,
+-- subject to the following conditions:
+
+-- The above copyright notice and this permission notice
+-- shall be included in all copies or substantial portions of the Software.
+
+-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+-- EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+-- OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+-- IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+-- ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+-- TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+-- SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+entity JTAG_SWITCHER is
+
+-- Generic Parameter
+
+generic (PHYSICAL_PIN_MAP : string := "NONE" );
+
+-- Logical Port Description
+
+port (
+    TCK: in bit;  --  TCK_0
+    TDI: in bit;  --  TDI_0
+    TDO: out bit; --  TDO_0
+    TMS: in bit;  --  TMS_0
+    GND: linkage bit
+); --end port list
+
+-- Use Statements
+
+use STD_1149_1_2001.all;
+
+-- Component Conformance Statement(s)
+
+attribute COMPONENT_CONFORMANCE of JTAG_SWITCHER : entity is
+    "STD_1149_1_2001";
+
+-- Device Package Pin Mappings
+
+attribute PIN_MAP of JTAG_SWITCHER : entity is PHYSICAL_PIN_MAP;
+
+constant NONE: PIN_MAP_STRING:=
+    "TCK:A00," & -- DOES NOT EXIST; Defined to satisfy 1149.1
+    "TDI:A01," & -- DOES NOT EXIST; Defined to satisfy 1149.1
+    "TDO:A02," & -- DOES NOT EXIST; Defined to satisfy 1149.1
+    "TMS:A03," & -- DOES NOT EXIST; Defined to satisfy 1149.1
+    "GND:A04";   -- DOES NOT EXIST; Defined to satisfy 1149.1
+
+-- Scan Port Identification
+
+attribute TAP_SCAN_IN    of TDI : signal is true;
+attribute TAP_SCAN_MODE  of TMS : signal is true;
+attribute TAP_SCAN_OUT   of TDO : signal is true;
+attribute TAP_SCAN_CLOCK of TCK : signal is (20.0e6, BOTH);
+
+-- Instruction Register Description
+
+attribute INSTRUCTION_LENGTH of JTAG_SWITCHER : entity is 4;
+
+attribute INSTRUCTION_OPCODE of JTAG_SWITCHER : entity is
+        "EXTEST     (0000)," & -- DOES NOT EXIST; Defined to satisfy 1149.1
+        "SAMPLE     (0001)," & -- DOES NOT EXIST; Defined to satisfy 1149.1
+        "PRELOAD    (0001)," & -- DOES NOT EXIST; Defined to satisfy 1149.1
+        "IDCODE     (0101)," & -- IDCODE
+        "RESET      (0110)," & -- PRIVATE
+        "DESEL      (0111)," & -- PRIVATE
+        "WRITE      (1001)," & -- PRIVATE
+        "READ       (1010)," & -- PRIVATE
+        "READWRITE  (1011)," & -- PRIVATE
+        "ADDR       (1100)," & -- PRIVATE
+        "ADDRWRITE  (1101)," & -- PRIVATE
+        "BYPASS     (1111)";   -- BYPASS
+
+attribute INSTRUCTION_CAPTURE of JTAG_SWITCHER : entity is
+        "XX01";
+
+-- Optional Register Description
+
+attribute IDCODE_REGISTER of JTAG_SWITCHER : entity is
+    "XXXX" &             -- version
+    "0001000100010001" & -- family
+    "11111111111" &      -- manufacturer
+    "1";                 -- required by 1149.1
+
+
+-- Register Access Description
+
+attribute REGISTER_ACCESS of JTAG_SWITCHER : entity is
+    "RESET[16] (RESET)," &
+    "DESEL[16] (DESEL)," &
+    "WRITE[16] (WRITE)," &
+    "READ[16] (READ)," &
+    "READWRITE[16] (READWRITE)," &
+    "ADDR[16] (ADDR)," &
+    "ADDRWRITE[32] (ADDRWRITE)," &
+    "BYPASS (BYPASS)," &
+    "DEVICE_ID (IDCODE)," &
+    "BOUNDARY (SAMPLE,PRELOAD,EXTEST)";
+
+-- Boundary-Scan Register Description -- DOES NOT EXIST; Defined to satisfy 1149.1
+
+attribute BOUNDARY_LENGTH of JTAG_SWITCHER : entity is 1;
+
+attribute BOUNDARY_REGISTER of JTAG_SWITCHER : entity is
+    "   0 (BC_2, *, internal, 1)";
+
+
+-- Design Warning Section
+
+attribute DESIGN_WARNING of JTAG_SWITCHER : entity is
+    "This BSDL describes the Jtag-Switcher IP." &
+    "During boundary-scan test, use only the IDCODE or BYPASS instructions." &
+    "Do NOT use the EXTEST, SAMPLE, or PRELOAD instructions.";
+
+end JTAG_SWITCHER;
+

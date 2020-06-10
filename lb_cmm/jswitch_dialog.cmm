@@ -1,0 +1,228 @@
+; --------------------------------------------------------------------------------
+; @Title: JSwitch control dialog
+; @Description:
+;   This script creates a dialog to manually control the PORT Select and TDOSYNC
+;   registers of JSwitch. It also allows to activate STEALTH mode.
+;   The dialog and the underlying JTAG.SEQuence's assume that JSwitch is the first
+;   device in the chain.
+;   Usage:
+;     DO jswitch_dialog
+;       -> Full Reset   - perform a JSwitch RESET
+;                         (all ports deselected, all register to default state)
+;       -> activate PORTs + optionally TDOSYNC per PORT + optionally STEALTH mode
+;          Write Config - writes the configuration to JSwitch
+;       -> Show Chain   - opens the SYStem.DETECT.ShowChain dialog
+;                         allows to verify the chain
+;    Other Featues:
+;       -> Discover Features
+;          read out the JSwitch ConfigA register and write parameters to
+;          jswitch_multitap_jtagsequence_cfg.cmm
+; @Author: AME
+; --------------------------------------------------------------------------------
+; $Id: 9ba486285ee026ffb1707ebcd1cdedc821b51649 $
+
+IF !(JTAG.SEQuence.EXIST(TLRJSwitchReset)&&JTAG.SEQuence.EXIST(TLRJSwitchWriteReg))
+(
+  DO ~~~~/jswitch_jtagsequence_lib.cmm
+)
+
+IF !DIALOG.EXIST(P.0)
+  GOSUB ShowDialog
+
+ENDDO
+
+ShowDialog: ;()
+(
+  LOCAL &sPpd &nMaxPorts &bSupportDeselectAll &bSupportTdoSync &bSupportStealth
+  &sPpd=OS.PPD()
+  DO ~~~~/jswitch_multitap_jtagsequence_cfg.cmm
+  RETURNVALUES  &nMaxPorts &bSupportDeselectAll &bSupportTdoSync &bSupportStealth
+
+  DIALOG
+  (&+
+    HEADER "JtagSwitcher"
+    POS 0. 0. 11. 1.
+    P.0:  CHECKBOX "PORT1" ""
+    P.1:  CHECKBOX "PORT2" ""
+    P.2:  CHECKBOX "PORT3" ""
+    P.3:  CHECKBOX "PORT4" ""
+    P.4:  CHECKBOX "PORT5" ""
+    P.5:  CHECKBOX "PORT6" ""
+    P.6:  CHECKBOX "PORT7" ""
+    P.7:  CHECKBOX "PORT8" ""
+    P.8:  CHECKBOX "PORT9" ""
+    P.9:  CHECKBOX "PORT10" ""
+    P.10: CHECKBOX "PORT11" ""
+    P.11: CHECKBOX "PORT12" ""
+    P.12: CHECKBOX "PORT13" ""
+    P.13: CHECKBOX "PORT14" ""
+    P.14: CHECKBOX "PORT15" ""
+    P.15: CHECKBOX "PORT16" ""
+    POS 12. 0. 11. 1.
+    T.0:  CHECKBOX "TDOSYNC" ""
+    T.1:  CHECKBOX "TDOSYNC" ""
+    T.2:  CHECKBOX "TDOSYNC" ""
+    T.3:  CHECKBOX "TDOSYNC" ""
+    T.4:  CHECKBOX "TDOSYNC" ""
+    T.5:  CHECKBOX "TDOSYNC" ""
+    T.6:  CHECKBOX "TDOSYNC" ""
+    T.7:  CHECKBOX "TDOSYNC" ""
+    T.8:  CHECKBOX "TDOSYNC" ""
+    T.9:  CHECKBOX "TDOSYNC" ""
+    T.10: CHECKBOX "TDOSYNC" ""
+    T.11: CHECKBOX "TDOSYNC" ""
+    T.12: CHECKBOX "TDOSYNC" ""
+    T.13: CHECKBOX "TDOSYNC" ""
+    T.14: CHECKBOX "TDOSYNC" ""
+    T.15: CHECKBOX "TDOSYNC" ""
+    STEALTH: CHECKBOX "STEALTH" ""
+
+    POS 0. 17. 10.
+    BUTTON "Full Reset"
+    (
+      JTAG.SEQuence.Execute TLRJSwitchReset
+    )
+    BUTTON "Discover Features"
+    (
+      PRIVATE &cLf &bResult
+      &cLf=CONVert.CHAR(0xa)
+      DIALOG.YESNO "Deselect all Slave TAPs and overwrite 'jswitch_multitap_jtagsequence_cfg.cmm' ? &(cLf)Click NO to abort."
+      ENTRY &bResult
+      IF !&bResult
+        ENDDO
+      PRIVATE &sCfgFile &nJSwitchGlobalConfig
+      SILENT.JTAG.SEQuence.Execute TLRJSwitchReset
+      SILENT.JTAG.SEQuence.Execute TLRJSwitchReadReg 0xf 0x0
+      &nJSwitchGlobalConfig=JTAG.SEQuence.RESULT(0)
+      &sCfgFile="&(sPpd)/jswitch_multitap_jtagsequence_cfg.cmm"
+      PRIVATE &sLine
+
+      IF OS.FILE(&sCfgFile)
+        RM "&sCfgFile"
+      APPEND "&sCfgFile" "; --------------------------------------------------------------------------------"
+      APPEND "&sCfgFile" "; @Title: Configuration parameters of JSwitch IP"
+      APPEND "&sCfgFile" "; @Description:"
+      APPEND "&sCfgFile" ";   Add the configuration of the JSwitch implementation here."
+      APPEND "&sCfgFile" ";   Settings need to match jswitch_config_pkg.vhd"
+      APPEND "&sCfgFile" ";   File is auto-generated using: jswitch_dialog.cmm"
+      APPEND "&sCfgFile" "; @Board: JSwitch ""TheKraken"" IP"
+      APPEND "&sCfgFile" "; @Keywords: JSWITCH"
+      APPEND "&sCfgFile" "; @Author: GENERATOR"
+      SPRINTF &sLine "; @Copyright: (C) 1989-%04u Lauterbach GmbH, licensed for use with TRACE32(R) only" DATE.YEAR()
+      APPEND "&sCfgFile" "&sLine"
+      APPEND "&sCfgFile" "; --------------------------------------------------------------------------------"
+      APPEND "&sCfgFile" "; $Id: 9ba486285ee026ffb1707ebcd1cdedc821b51649 $"
+
+      APPEND "&sCfgFile" "PRIVATE &"+"nMaxPorts &"+"bSupportDeselectAll &"+"bSupportTdoSync &"+"bSupportStealth"
+      APPEND "&sCfgFile" ""
+
+      APPEND "&sCfgFile" "; number of JSwitch Slave TAP ports"
+      SPRINTF &sLine "nMaxPorts=%u." &nJSwitchGlobalConfig&0x7f
+      APPEND "&sCfgFile" "&"+"&sLine"
+
+      APPEND "&sCfgFile" "; supports instruction ""deselect all slave taps"" 0x7"
+      APPEND "&sCfgFile" "&"+"bSupportDeselectAll=TRUE()"
+
+      APPEND "&sCfgFile" "; supports TDOSYNC feature"
+      &sLine="bSupportTdoSync="
+      IF (&nJSwitchGlobalConfig&0x100)==0x0
+        &sLine="&(sLine)FALSE()"
+      ELSE
+        &sLine="&(sLine)TRUE()"
+      APPEND "&sCfgFile" "&"+"&sLine"
+
+      APPEND "&sCfgFile" "; supports STEALTH feature"
+      &sLine="bSupportStealth="
+      IF (&nJSwitchGlobalConfig&0x1000)==0x0
+        &sLine="&(sLine)FALSE()"
+      ELSE
+        &sLine="&(sLine)TRUE()"
+      APPEND "&sCfgFile" "&"+"&sLine"
+
+      APPEND "&sCfgFile" ""
+      APPEND "&sCfgFile" "ENDDO ""&"+"nMaxPorts"" ""&"+"bSupportDeselectAll"" ""&"+"bSupportTdoSync"" ""&"+"bSupportStealth"""
+      DIALOG.END
+      DO "&sPpd/jswitch_dialog.cmm"
+    )
+
+    POS 12. 17. 10.
+    BUTTON "Write Config"
+    (
+      PRIVATE &nEnable &nTdoSync &i
+
+      IF &nMaxPorts>16.
+      (
+        DIALOG.OK "MaxPorts exceeds number of supported Ports"
+        ENDDO
+      )
+
+      &nEnable=0x0
+      &nTdoSync=0x0
+      &i=&nMaxPorts-1
+      RePeaT &nMaxPorts
+      (
+        PRIVATE &tmp
+        &nEnable=&nEnable<<2.
+        &nTdoSync=&nTdoSync<<2.
+
+        SPRINTF &tmp "P.%u" &i
+        IF DIALOG.BOOLEAN(&tmp)
+          &nEnable=&nEnable|0y01
+        ELSE
+          &nEnable=&nEnable|0y10
+
+        SPRINTF &tmp "T.%u" &i
+        IF DIALOG.BOOLEAN(&tmp)
+          &nTdoSync=&nTdoSync|0y01
+        ELSE
+          &nTdoSync=&nTdoSync|0y10
+
+        &i=&i-1.
+      )
+
+      LOG.TOAREA ON ">>>"
+      SILENT.JTAG.SEQuence.Execute TLRJSwitchDisableAll
+      IF DIALOG.BOOLEAN(STEALTH)
+      (
+        SILENT.JTAG.SEQuence.Execute TLRJSwitchWriteAllBanks 0x2 (&nTdoSync>>0.)&0xffff (&nTdoSync>>16.)&0xffff
+        SILENT.JTAG.SEQuence.Execute TLRJSwitchWriteAllBanksStealth 0x1 (&nEnable>>0.)&0xffff (&nEnable>>16.)&0xffff
+      )
+      ELSE
+      (
+        SILENT.JTAG.SEQuence.Execute TLRJSwitchWriteAllBanks 0x2 (&nTdoSync>>0.)&0xffff (&nTdoSync>>16.)&0xffff
+        SILENT.JTAG.SEQuence.Execute TLRJSwitchWriteAllBanks 0x1 (&nEnable>>0.)&0xffff (&nEnable>>16.)&0xffff
+      )
+      LOG.TOAREA OFF
+    )
+    BUTTON "SHOWChain" "SYStem.DETECT.SHOWChain"
+
+    CLOSE "DIALOG.END"
+  )
+  GOSUB DialogReset "&nMaxPorts" "&bSupportTdoSync" "&bSupportStealth"
+  RETURN
+)
+
+DialogReset: ;(nMaxPorts, bSupportTdoSync &bSupportStealth)
+(
+  PARAMETERS &nMaxPorts &bSupportTdoSync &bSupportStealth
+  PRIVATE &i &tmp
+  &i=0
+  RePeaT 16.
+  (
+    IF &i>=&nMaxPorts
+    (
+      SPRINTF &tmp "P.%u" &i
+      DIALOG.DISABLE &tmp
+    )
+    IF !&bSupportTdoSync||(&i>=&nMaxPorts)
+    (
+      SPRINTF &tmp "T.%u" &i
+      DIALOG.DISABLE &tmp
+    )
+    &i=&i+1.
+  )
+  IF !&bSupportStealth
+    DIALOG.DISABLE STEALTH
+
+  RETURN
+)

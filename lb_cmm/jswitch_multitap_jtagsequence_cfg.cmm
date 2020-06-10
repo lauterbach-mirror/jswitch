@@ -1,0 +1,22 @@
+; --------------------------------------------------------------------------------
+; @Title: Configuration parameters of JSwitch IP
+; @Description:
+;   Add the configuration of the JSwitch implementation here.
+;   Settings need to match jswitch_config_pkg.vhd
+;   File is auto-generated using:
+; @Board: JSwitch "TheKraken" IP
+; @Keywords: JSWITCH
+; @Author: GENERATOR
+; @Copyright: (C) 1989-2020 Lauterbach GmbH, licensed for use with TRACE32(R) only
+; --------------------------------------------------------------------------------
+; $Id: 81f2a8b6a07367d7692a15384b2698e5080c0771 $
+PRIVATE &nMaxPorts &bSupportDeselectAll &bSupportTdoSync &bSupportStealth
+; number of JSwitch Slave TAP ports
+&nMaxPorts=4.
+; supports instruction "deselect all slave taps" 0x7
+&bSupportDeselectAll=TRUE()
+; supports TDOSYNC feature
+&bSupportTdoSync=TRUE()
+; supports STEALTH feature
+&bSupportStealth=TRUE()
+ENDDO "&nMaxPorts" "&bSupportDeselectAll" "&bSupportTdoSync" "&bSupportStealth"

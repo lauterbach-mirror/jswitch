@@ -1,0 +1,5 @@
+
+SET QUARTUS_ROOTDIR=C:\altera\16_1\quartus
+SET PATH=%QUARTUS_ROOTDIR%\bin64;C:\Windows;C:\Windows\System32
+
+EXIT /B

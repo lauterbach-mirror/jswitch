@@ -1,0 +1,275 @@
+; --------------------------------------------------------------------------------
+; @Title: Calculate JTAG.SEQuence's based on JSwitch configuration
+; @Description:
+;   This script calculates JTAG.SEQuence's based on the JSwitch
+;    configuration. These routines can be used to read/write JSwitch internal
+;    registers.
+;    The calculated sequences are independent of the Daisy-Chaining settings
+;    (SYStem.CONFIG [DAP]<IR|DR><PRE|POST>) in TRACE32.
+;    It's assumed that JSwitch is the first and only device in the chain.
+;    The Reset routine is robust against 128 IR-Bits in the chain.
+;    Examples:
+;      JTAG.SEQuence.Execute TLRJSwitchReset
+;        do a JSwitch Reset using IR=0y0110
+;      JTAG.SEQuence.Execute TLRJSwitchWriteReg <bank> <reg> <value>
+;        e.g. JTAG.SEQuence.Execute TLRJSwitchWriteReg 0xf 0x5 0xffff
+;        e.g. JTAG.SEQuence.Execute TLRJSwitchWriteReg 0xf 0x4 0y1010101010100110
+;      JTAG.SEQuence.Execute TLRJSwitchReadReg <bank> <reg>
+;        e.g. JTAG.SEQuence.Execute TLRJSwitchWriteReg 0xf 0x5
+;              PRINT JTAG.SEQuence.RESULT(0)
+;      JTAG.SEQuence.Execute TLRJSwitchReadMaskWriteReg <bank> <reg> <mask> <value>
+;        e.g. set bit7--4=0x1 in reg 0x6, bank 0xf
+;        JTAG.SEQuence.Execute TLRJSwitchReadMaskWriteReg 0xf 0x6 0xf0 0x10
+; @Author: AME
+; --------------------------------------------------------------------------------
+; $Id: 9705dd1325417c6ddb1c590850d1168a060045a3 $
+
+PRIVATE &nMaxPorts &bSupportDeselectAll &bSupportTdoSync &bSupportStealth
+DO ~~~~/jswitch_multitap_jtagsequence_cfg.cmm
+RETURNVALUES &nMaxPorts &bSupportDeselectAll &bSupportTdoSync &bSupportStealth
+
+; some helper macros
+PRIVATE &sGotoShiftDr &sGotoShiftIr &sGotoRTI &sTAPResetGotoRTI
+PRIVATE &nJSwitchIrWidth
+&sGotoShiftDr="JTAG.SEQuence.ADD , RawShift 3. 0x1 0x0"
+&sGotoShiftIr="JTAG.SEQuence.ADD , RawShift 4. 0x3 0x0"
+&sGotoRTI="JTAG.SEQuence.ADD , RawShift 3. 0x1 0x0"
+&sTAPResetGotoRTI="JTAG.SEQuence.ADD , RawShift 7. 0x3F 0x0"
+&sStealthExitDrGotoShiftDrNoRti="JTAG.SEQuence.ADD , RawShift 4. 0x03 0x0"
+&nJSwitchIrWidth=4.
+
+; -----------------------------------------------------------------------------
+
+IF !JTAG.SEQuence.EXIST(TLRJSwitchReset)
+(
+  JTAG.SEQuence.Create TLRJSwitchReset
+  &sTAPResetGotoRTI
+  IF (TRUE()) ; &bSupportStealth
+  (
+    &sGotoShiftIr
+    ; sequence: 0xff -> BYPASS, then 8bits 0x0 (initialize LFSR), then magic LFSR sequence, 0xff -> BYPASS
+    JTAG.SEQuence.ADD , RawShift 64. 0x0      0xffffffffffffffff
+    JTAG.SEQuence.ADD , RawShift 64. 0x0      0xffffffffffffffff
+    JTAG.SEQuence.ADD , RawShift 8.  0x0      0x0
+    JTAG.SEQuence.ADD , RawShift 64. 0x0      0x19A63957525FCFB7
+    JTAG.SEQuence.ADD , RawShift 64. 0x0      0x8143641E2D6113BD
+    JTAG.SEQuence.ADD , RawShift 64. 0x0      0xffffffffffffffff
+    JTAG.SEQuence.ADD , RawShift 64. (1<<63.) 0xffffffffffffffff
+    &sGotoRTI
+  )
+  &sGotoShiftIr
+  JTAG.SEQuence.ADD , RawShift 64. 0x0 0xffffffffffffffff
+  JTAG.SEQuence.ADD , RawShift 64. 0x0 0xffffffffffffffff
+  ; do not use ShiftIrAndExit here
+  JTAG.SEQuence.ADD , RawShift &nJSwitchIrWidth 0y1000 0y0110
+  &sGotoRTI
+)
+
+; -----------------------------------------------------------------------------
+
+IF !JTAG.SEQuence.EXIST(TLRJSwitchDisableAll)
+(
+  JTAG.SEQuence.Create TLRJSwitchDisableAll
+  &sTAPResetGotoRTI
+  IF (&bSupportStealth)
+  (
+    &sGotoShiftIr
+    ; sequence: 0xff -> BYPASS, then 8bits 0x0 (initialize LFSR), then magic LFSR sequence, 0xff -> BYPASS
+    JTAG.SEQuence.ADD , RawShift 64. 0x0      0xffffffffffffffff
+    JTAG.SEQuence.ADD , RawShift 64. 0x0      0xffffffffffffffff
+    JTAG.SEQuence.ADD , RawShift 8.  0x0      0x0
+    JTAG.SEQuence.ADD , RawShift 64. 0x0      0x19A63957525FCFB7
+    JTAG.SEQuence.ADD , RawShift 64. 0x0      0x8143641E2D6113BD
+    JTAG.SEQuence.ADD , RawShift 64. 0x0      0xffffffffffffffff
+    JTAG.SEQuence.ADD , RawShift 64. (1<<63.) 0xffffffffffffffff
+    &sGotoRTI
+  )
+  IF (&bSupportDeselectAll)
+  (
+    ; deselect all slave TAPs
+    &sGotoShiftIr
+    JTAG.SEQuence.ADD , RawShift 64. 0x0 0xffffffffffffffff
+    JTAG.SEQuence.ADD , RawShift 64. 0x0 0xffffffffffffffff
+    JTAG.SEQuence.ADD , RawShift &nJSwitchIrWidth 0y1000 0y0111
+    &sGotoRTI
+  )
+  ELSE
+  (
+    ; deselect all slave TAPs - iterate over all ports
+    PRIVATE &nCurBank
+    &nCurBank=0.
+    RePeaT ((&nMaxPorts-1.)>>3.)+1.
+    (
+      &sGotoShiftIr
+      JTAG.SEQuence.ADD , RawShift 64. 0x0 0xffffffffffffffff
+      JTAG.SEQuence.ADD , RawShift 64. 0x0 0xffffffffffffffff
+      JTAG.SEQuence.ADD , RawShift &nJSwitchIrWidth 0y1000 0y1101
+      &sGotoRTI
+      &sGotoShiftDr
+      JTAG.SEQuence.ADD , RawShift 32. 0x0 0xffffffff
+      JTAG.SEQuence.ADD , RawShift 32. 0x80000000 (&nCurBank<<28.)|0x00010000|(0xAAAA)
+      &sGotoRTI
+      &nCurBank=&nCurBank+1.
+    )
+  )
+)
+
+; -----------------------------------------------------------------------------
+
+IF !JTAG.SEQuence.EXIST(TLRJSwitchWriteReg)
+(
+  JTAG.SEQuence.Create TLRJSwitchWriteReg ; (Bank, Reg, Data)
+  JTAG.SEQuence.ADD , ASSIGN Local0 = Local0 << 28.
+  JTAG.SEQuence.ADD , ASSIGN Local0 = Local0 & 0xf0000000
+  JTAG.SEQuence.ADD , ASSIGN Local1 = Local1 << 16.
+  JTAG.SEQuence.ADD , ASSIGN Local1 = Local1 & 0xfff0000
+  JTAG.SEQuence.ADD , ASSIGN Local2 = Local2 & 0xffff
+  JTAG.SEQuence.ADD , ASSIGN Local0 = Local0 | Local1
+  JTAG.SEQuence.ADD , ASSIGN Local0 = Local0 | Local2
+  &sTAPResetGotoRTI
+  &sGotoShiftIr
+  JTAG.SEQuence.ADD , RawShift &nJSwitchIrWidth 0y1000 0y1101
+  &sGotoRTI
+  &sGotoShiftDr
+  JTAG.SEQuence.ADD , RawShift 32. 0x80000000 Local0
+  &sGotoRTI
+)
+
+; -----------------------------------------------------------------------------
+
+IF !JTAG.SEQuence.EXIST(TLRJSwitchWriteAllBanks)
+(
+  PRIVATE &i &sLocal &sBankValue
+  &i=(&nMaxPorts-1)/8.
+  JTAG.SEQuence.Create TLRJSwitchWriteAllBanks ; (Reg, DataBank0, DataBank1, ...)
+  JTAG.SEQuence.ADD , ASSIGN Local0 = Local0 << 16.
+  JTAG.SEQuence.ADD , ASSIGN Local0 = Local0 & 0xfff0000
+
+  &sTAPResetGotoRTI
+  &sGotoShiftIr
+  JTAG.SEQuence.ADD , RawShift &nJSwitchIrWidth 0y1000 0y1101
+  &sGotoRTI
+  &sGotoShiftDr
+  IF ((&nMaxPorts-1.)/8.)>0
+  (
+    RePeaT ((&nMaxPorts-1)/8.)
+    (
+      SPRINTF &sLocal "Local%u" &i+1
+      SPRINTF &sBankValue "0x%x0000000" &i
+      JTAG.SEQuence.ADD , ASSIGN &sLocal = &sLocal & 0xffff
+      JTAG.SEQuence.ADD , ASSIGN &sLocal = &sLocal | Local0
+      JTAG.SEQuence.ADD , ASSIGN &sLocal = &sLocal | &sBankValue
+      JTAG.SEQuence.ADD , RawShift 32. 0x80000000 &sLocal
+      &sStealthExitDrGotoShiftDrNoRti
+      &i=&i-1.
+    )
+  )
+  JTAG.SEQuence.ADD , ASSIGN Local1 = Local1 & 0xffff
+  JTAG.SEQuence.ADD , ASSIGN Local1 = Local1 | Local0
+  JTAG.SEQuence.ADD , RawShift 32. 0x80000000 Local1
+  &sGotoRTI
+)
+
+; -----------------------------------------------------------------------------
+
+IF !JTAG.SEQuence.EXIST(TLRJSwitchWriteAllBanksStealth)
+(
+  PRIVATE &i &sLocal &sBankValue
+  &i=(&nMaxPorts-1)/8.
+  JTAG.SEQuence.Create TLRJSwitchWriteAllBanksStealth ; (Reg, DataBank0, DataBank1, ...)
+  JTAG.SEQuence.ADD , ASSIGN Local0 = Local0 << 16.
+  JTAG.SEQuence.ADD , ASSIGN Local0 = Local0 & 0xfff0000
+
+  &sTAPResetGotoRTI
+  &sGotoShiftIr
+  JTAG.SEQuence.ADD , RawShift &nJSwitchIrWidth 0y1000 0y1101
+  &sGotoRTI
+  &sGotoShiftDr
+  IF ((&nMaxPorts-1.)/8.)>0
+  (
+    RePeaT ((&nMaxPorts-1)/8.)
+    (
+      SPRINTF &sLocal "Local%u" &i+1
+      SPRINTF &sBankValue "0x%x0000000" &i
+      JTAG.SEQuence.ADD , ASSIGN &sLocal = &sLocal & 0xffff
+      JTAG.SEQuence.ADD , ASSIGN &sLocal = &sLocal | Local0
+      JTAG.SEQuence.ADD , ASSIGN &sLocal = &sLocal | &sBankValue
+      JTAG.SEQuence.ADD , RawShift 32. 0x80000000 &sLocal
+      &sStealthExitDrGotoShiftDrNoRti
+      &i=&i-1.
+    )
+  )
+  JTAG.SEQuence.ADD , ASSIGN Local1 = Local1 & 0xffff
+  JTAG.SEQuence.ADD , ASSIGN Local1 = Local1 | Local0
+  JTAG.SEQuence.ADD , RawShift 32. 0x80000000 Local1
+  &sStealthExitDrGotoShiftDrNoRti
+  JTAG.SEQuence.ADD , RawShift 32. 0x80000000 0xf0020001
+  &sGotoRTI
+)
+
+; -----------------------------------------------------------------------------
+
+IF VERSION.BUILD.BASE()<=109049.
+(
+  PRINT %WARNING "Cannot create TLRJSwitchReadMaskWriteReg, use more recent software!"
+)
+ELSE IF !JTAG.SEQuence.EXIST(TLRJSwitchReadReg)
+(
+  JTAG.SEQuence.Create TLRJSwitchReadReg ; (Bank, Reg)
+  JTAG.SEQuence.ADD , ASSIGN Local0 = Local0 << 12.
+  JTAG.SEQuence.ADD , ASSIGN Local0 = Local0 & 0xf000
+  JTAG.SEQuence.ADD , ASSIGN Local1 = Local1 & 0xfff
+  JTAG.SEQuence.ADD , ASSIGN Local0 = Local0 | Local1
+  &sTAPResetGotoRTI
+  &sGotoShiftIr
+  JTAG.SEQuence.ADD , RawShift &nJSwitchIrWidth 0y1000 0y1100
+  &sGotoRTI
+  &sGotoShiftDr
+  JTAG.SEQuence.ADD , RawShift 16. 0x8000 Local0
+  &sGotoRTI
+  &sGotoShiftIr
+  JTAG.SEQuence.ADD , RawShift &nJSwitchIrWidth 0y1000 0y1010
+  &sGotoRTI
+  &sGotoShiftDr
+  JTAG.SEQuence.ADD , RawShift 16. 0x8000 0x0 Result0
+  &sGotoRTI
+)
+
+; -----------------------------------------------------------------------------
+
+IF VERSION.BUILD.BASE()<=109049.
+(
+  PRINT %WARNING "Cannot create TLRJSwitchReadMaskWriteReg, use more recent software!"
+)
+ELSE IF !JTAG.SEQuence.EXIST(TLRJSwitchReadMaskWriteReg)
+(
+  JTAG.SEQuence.Create TLRJSwitchReadMaskWriteReg ; (Bank, Reg, Mask, Val)
+  JTAG.SEQuence.ADD , ASSIGN Local0 = Local0 << 12.
+  JTAG.SEQuence.ADD , ASSIGN Local0 = Local0 & 0xf000
+  JTAG.SEQuence.ADD , ASSIGN Local1 = Local1 & 0xfff
+  JTAG.SEQuence.ADD , ASSIGN Local0 = Local0 | Local1
+  &sTAPResetGotoRTI
+  &sGotoShiftIr
+  JTAG.SEQuence.ADD , RawShift &nJSwitchIrWidth 0y1000 0y1100
+  &sGotoRTI
+  &sGotoShiftDr
+  JTAG.SEQuence.ADD , RawShift 16. 0x8000 Local0
+  &sGotoRTI
+  &sGotoShiftIr
+  JTAG.SEQuence.ADD , RawShift &nJSwitchIrWidth 0y1000 0y1010
+  &sGotoRTI
+  &sGotoShiftDr
+  JTAG.SEQuence.ADD , RawShift 16. 0x8000 0x0 Result0
+  &sGotoRTI
+
+  JTAG.SEQuence.ADD , ASSIGN Result0 = Result0 & ~ Local2
+  JTAG.SEQuence.ADD , ASSIGN Result0 = Result0 | Local3
+  &sGotoShiftIr
+  JTAG.SEQuence.ADD , RawShift &nJSwitchIrWidth 0y1000 0y1001
+  &sGotoRTI
+  &sGotoShiftDr
+  JTAG.SEQuence.ADD , RawShift 16. 0x8000 0x0 Result0
+  &sGotoRTI
+)
+
+ENDDO

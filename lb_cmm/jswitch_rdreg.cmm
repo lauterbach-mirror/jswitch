@@ -1,0 +1,57 @@
+// Use this after "jswitch_rst" or "jswitch_deselect_all"
+// If chain has not de-selected everything, this will NOT work.
+// Call with
+//   RUN jswitch_rdreg "<address>"
+// Format of address:
+//   Bit 19..16  BANK number (use 0xF for global register)
+//   Bit 11..0   Register address
+// Example:
+//   RUN jswitch_rdreg 0xF0000
+// => Reads global ConfigA register.
+
+PARAMETERS &addr
+
+LOCAL &value
+
+// make sure we use setting of SYStem.JtagClock
+// as JTAG TCK frequency
+JTAG.USECLOCK ON
+
+JTAG.LOCK
+// Go through Test-Logic-Reset to Run-Test/Idle
+JTAG.SHIFTTMS 1 1 1 1 1 1 1 1 1 1 0 0 0 0
+GOSUB rdReg "&addr"
+RETURNVALUES &value
+JTAG.UNLOCK
+
+PRINT "Address: 0x"+format.hex(1.,&addr)+" -> Read: 0x"+format.hex(4.,&value)
+
+ENDDO
+
+
+rdReg:
+  PARAMETERS &addr
+  LOCAL &dr
+  // RTI->Shift-IR
+  JTAG.SHIFTTMS 1 1 0 0
+  // Load  "Set Address" Command into IR
+  // (assume there are no slave IRs in chain)
+  // Note shifting 4 bit would be enough, but using a full BYTE (8 bit) is simpler:
+  JTAG.SHIFTREG %BYTE 0xCF
+  // Exit1IR->Shift-DR
+  JTAG.SHIFTTMS 1 0 1 0 0
+  // bit 15..12 bank
+  // bit  2..0  address
+  &dr=((&addr)&0x7)|(((&addr)&0xF0000)>>4.)
+  JTAG.SHIFTREG %WORD  &dr
+  // Exit1DR->Shift-IR
+  JTAG.SHIFTTMS 1 0 1 1 0 0
+  // Load "Read from Address" Command into IR
+  JTAG.SHIFTREG %BYTE 0xAF
+  // Exit1IR->Shift-DR
+  JTAG.SHIFTTMS 1 0 1 0 0
+  JTAG.SHIFTREG %WORD 0x0
+  &dr=JTAG.SHIFT()
+  // Exit1DR->Run-Test/Idle
+  JTAG.SHIFTTMS 1 0 0
+RETURN "&dr"

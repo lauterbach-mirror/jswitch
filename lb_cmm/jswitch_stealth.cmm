@@ -1,0 +1,62 @@
+// PreRequisite: No JTAG slave TAPs are selected.
+// Only works for JTAG slave TAPs 1..8
+//
+// Call with
+//   RUN jswitch_stealth "<JTAG slave TAP to select>"
+PARAMETERS &devsel
+
+IF (&devsel<1)||(&devsel>8)
+(
+  PRINT %ERROR "Illegal Port. Exiting ..."
+  ENDDO
+)
+
+// make sure we use setting of SYStem.JtagClock
+// as JTAG TCK frequency
+JTAG.USECLOCK ON
+
+JTAG.LOCK
+// Go through Test-Logic-Reset to SelDR
+JTAG.SHIFTTMS 1 1 1 1 1 1 1 1 1 1 0 0 0 0 1
+&devsel=(0x1)<<(((&devsel)-1)*2)
+// prepare for device selection
+GOSUB wrReg "0x0001" "&devsel"
+
+// prepare stealth mode
+// UpdDR -> SelDR
+JTAG.SHIFTTMS 1
+GOSUB wrReg "0xF0002" "0x1"
+
+// UpdDR -> 8xRTI to activate stealth
+JTAG.SHIFTTMS 0 0 0 0 0 0 0 0 1 1 1 1 1
+
+JTAG.UNLOCK
+
+END
+
+
+// Address:
+//   Bit 19..16   bank
+//   Bit  2..0    address
+wrReg:
+  PARAMETERS &addr &val
+  LOCAL &dr
+  // DR value:
+  //   bit 31..28 bank
+  //   bit 18..16 address
+  //   bit 15..0  data to write
+  &dr=(((&addr)&0xF0000)<<12.)|(((&addr)&0x7)<<16.)|((&val)&0xFFFF)
+
+  // SelDR -> Shift-IR
+  JTAG.SHIFTTMS 1 0 0
+  // Shift in a lot of '1' bits as IRPRE, to make sure all
+  // slave IRs in the chain are loaded with BYPASS
+  // Shift in "Set Address + Write to bus" instruction (0xD) last
+  JTAG.SHIFTREG %LONG 0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF 0xDFFFFFFF
+  // Exit1-IR -> Shift-DR
+  JTAG.SHIFTTMS 1 1 0 0
+  // Set Address + Write Value
+  JTAG.SHIFTREG %LONG  &dr
+  // Exit1-DR -> Upd-DR
+  JTAG.SHIFTTMS 1
+RETURN

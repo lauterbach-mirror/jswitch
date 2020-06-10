@@ -1,0 +1,15 @@
+REM Please adapt Pathes
+REM https://github.com/nfd/spi-flash-programmer.git - Commit e6dfe5c382509e3c03757fccae268e7c5b0a06c5
+REM Program and connect OLIMEXINO-32U4
+REM Connect OLIMEXINO-32U4 with iCE40HX8K-EVB
+
+set PYTHON_PATH=c:\Python37_x64
+set SPI_FLASH_PROGAMMER_PATH=c:\Users\amerkle\Documents\Arduino\spi_flash_programmer
+set COM=COM86
+
+%PYTHON_PATH%\python.exe "%SPI_FLASH_PROGAMMER_PATH%\spi_flash_programmer_client.py" -d %COM% --io 0x2 --value 0x0 set-output
+%PYTHON_PATH%\python.exe "%SPI_FLASH_PROGAMMER_PATH%\spi_flash_programmer_client.py" -d %COM% --io 0xd set-cs-io
+%PYTHON_PATH%\python.exe "%SPI_FLASH_PROGAMMER_PATH%\spi_flash_programmer_client.py" -d %COM% id-register
+pause
+%PYTHON_PATH%\python.exe "%SPI_FLASH_PROGAMMER_PATH%\spi_flash_programmer_client.py" -d %COM% --pad 0xff -l -1 -f ".\prj_switch\jtagswitcher_Implmnt\sbt\outputs\bitmap\toplevel_bitmap.bin" write
+pause

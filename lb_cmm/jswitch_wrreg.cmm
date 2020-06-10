@@ -1,0 +1,43 @@
+// Call with
+//   RUN jswitch_wrreg "<address>" "<value>"
+PARAMETERS &addr &value
+
+// make sure we use setting of SYStem.JtagClock
+// as JTAG TCK frequency
+JTAG.USECLOCK ON
+
+JTAG.LOCK
+// Go through Test-Logic-Reset to Run-Test/Idle
+JTAG.SHIFTTMS 1 1 1 1 1 1 1 1 1 1 0 0 0 0
+GOSUB wrReg "&addr" "&value"
+JTAG.UNLOCK
+
+ENDDO
+
+
+// Address:
+//   Bit 19..16   bank
+//   Bit  2..0    address
+wrReg:
+  PARAMETERS &addr &val
+  LOCAL &dr
+  // DR value:
+  //   bit 31..28 bank
+  //   bit 18..16 address
+  //   bit 15..0  data to write
+  &dr=(((&addr)&0xF0000)<<12.)|(((&addr)&0x7)<<16.)|((&val)&0xFFFF)
+
+  // RTI -> Shift-IR
+  JTAG.SHIFTTMS 1 1 0 0
+  // Shift in a lot of '1' bits as IRPRE, to make sure all
+  // slave IRs in the chain are loaded with BYPASS
+  // Shift in "Set Address + Write to bus" instruction (0xD) last
+  JTAG.SHIFTREG %LONG 0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF 0xDFFFFFFF
+  // Exit1-IR -> Shift-DR
+  JTAG.SHIFTTMS 1 0 1 0 0
+  // Set Address + Write Value
+  JTAG.SHIFTREG %LONG  &dr
+  // Exit1-DR -> RTI, stay 8 cycles in Run-Test/Idle
+  // to make sure control register change is activated.
+  JTAG.SHIFTTMS 1 0 0 0 0 0 0 0 0
+RETURN

@@ -1,0 +1,18 @@
+// Call with
+//   RUN jswitch_stealth_exit
+
+// make sure we use setting of SYStem.JtagClock
+// as JTAG TCK frequency
+JTAG.USECLOCK ON
+
+JTAG.LOCK
+// Go through Test-Logic-Reset to ShiftIR
+JTAG.SHIFTTMS 1 1 1 1 1 1 1 1 1 1 0 0 0 0 1 1 0 0
+// magic 127 bit sequence to exit stealth mode.
+// add a lot of 1 bits to load all selected devices with BYPASS instruction code.
+JTAG.SHIFTREG %BYTE 0x00 %LONG 0x525FCFB7 0x19A63957 0x2D6113BD 0x8143641E 0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF
+// Ex1IR -> RTI
+JTAG.SHIFTTMS 1 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1
+JTAG.UNLOCK
+
+END

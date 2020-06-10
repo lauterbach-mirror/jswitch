@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# re-name/copy to quartus_env.sh and modfiy
+
+QUARTUS_ROOTDIR=/opt/altera/16_1/quartus

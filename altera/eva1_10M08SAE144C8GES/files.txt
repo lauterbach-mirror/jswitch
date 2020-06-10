@@ -1,0 +1,14 @@
+D maxten
+H ../../src/jswitch_config_pkg.vhd
+H ../../src/jswitch_config_pkg_body.vhd
+H ../../src/jswitch_bus_pkg.vhd
+H ../../src/jswitch_internal_pkg.vhd
+H ../../src/jswitch_jtag_machine.vhd
+H ../../src/jswitch_jtag_shift.vhd
+H ../../src/jswitch_int_busmaster.vhd
+H ../../src/jswitch_regs.vhd
+H ../../src/jswitch_top.vhd
+H bus_leds.vhd
+H altera_ram.vhd
+H bus_ram.vhd
+H toplevel.vhd

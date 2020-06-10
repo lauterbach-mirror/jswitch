@@ -1,0 +1,12 @@
+D jswitch
+B jswitch_config_pkg.vhd
+B ../../src/jswitch_config_pkg_body.vhd
+B ../../src/jswitch_bus_pkg.vhd
+B ../../src/jswitch_internal_pkg.vhd
+B ../../src/jswitch_jtag_machine.vhd
+B ../../src/jswitch_jtag_shift.vhd
+B ../../src/jswitch_int_busmaster.vhd
+B ../../src/jswitch_regs.vhd
+B ../../src/jswitch_top.vhd
+B fpga_top.vhd
+X jswitch.ucf

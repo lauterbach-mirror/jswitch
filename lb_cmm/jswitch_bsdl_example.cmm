@@ -1,0 +1,243 @@
+; --------------------------------------------------------------------------------
+; @Title: Example to verify BSDL operation behind JSwitch
+; @Description:
+;   Demonstrates that JSwitch can be controlled by BSDL low-level commands.
+;   Optionally starts a test on a ZYNQ-US / ARM-DAP behind the ports.
+; @Author: AME
+; --------------------------------------------------------------------------------
+; $Id: 876f41b3a11b4229e0583ea17f33eb8d09bd8b20 $
+
+SYStem.Down
+
+; -----------------------------------------------------------------------------
+; Example 1: deselect all Slaves
+; assume chain: JSwitch -> Arbitary enabled Ports
+; => add 64 linkage bits (IRPRE-BITS)
+BSDL.RESet
+BSDL.ParkState RTI
+BSDL.LINKAGE 64.
+BSDL.FILE ~~~~/../bsdl/jtag_switcher.bsd
+JTAG.LOCK
+
+; deselect all slaves
+BSDL.SET 2. IR DESEL
+BSDL.RUN.IR
+
+JTAG.UNLOCK
+
+; -----------------------------------------------------------------------------
+; Example 2: Verify JTAG chain
+; assume chain: JSwitch
+BSDL.RESet
+BSDL.ParkState RTI
+BSDL.FILE ~~~~/../bsdl/jtag_switcher.bsd
+JTAG.LOCK
+
+; Check boundary scan chain
+BSDL.SOFTRESET
+IF !BSDL.CHECK.BYPASS()
+(
+  BSDL.BYPASSall
+  PRINT %ERROR "Bypass test failed"
+  ENDDO
+)
+IF !BSDL.CHECK.IDCODE()
+(
+  BSDL.IDCODEall
+  PRINT %ERROR "ID code test failed"
+  ENDDO
+)
+JTAG.UNLOCK
+
+; -----------------------------------------------------------------------------
+; Example 3: Read CONFIGA Register
+; assume chain: JSwitch
+BSDL.RESet
+BSDL.ParkState RTI
+BSDL.FILE ~~~~/../bsdl/jtag_switcher.bsd
+JTAG.LOCK
+
+; set ADDRess - Bank GLOBAL (0xf), Addr 0x0
+BSDL.SET 1. IR ADDR
+BSDL.SET 1. DR * 0xf000
+BSDL.RUN
+; perform READ
+BSDL.SET 1. IR READ
+BSDL.SET 1. DR * ExpectX
+BSDL.RUN
+
+(
+  PRIVATE &i &nConfigA
+  &i=0.
+  &nConfigA=0x0
+  RePeaT 16.
+  (
+    &nConfigA=&nConfigA|((BSDL.GetDRBit(1.,&i)&0x1)<<&i)
+    &i=&i+1.
+  )
+  PRINTF "ConfigA: 0x%04x" &nConfigA
+)
+
+JTAG.UNLOCK
+
+; -----------------------------------------------------------------------------
+; Example 4: Activate Port 3 - verify chain
+; assume chain: JSwitch => JSwitch + ARM-DAP
+BSDL.RESet
+BSDL.ParkState RTI
+BSDL.LINKAGE 64.
+BSDL.FILE ~~~~/../bsdl/jtag_switcher.bsd
+JTAG.LOCK
+
+; write e.g. two SELECT register banks
+; use LINKAGE bits in order not to write random data to interim enabled slave port TAPs
+(
+  PRIVATE &Bank0Sel &Bank1Sel
+  &Bank0Sel=(0x0<<28.)|(0x1<<16.)|(0x1<<((3.-1.)*2.))
+  &Bank1Sel=(0x1<<28.)|(0x1<<16.)|(0x0)
+  BSDL.SET 2. IR ADDRWRITE
+  BSDL.SET 2. DR * &Bank0Sel
+  BSDL.RUN
+
+  BSDL.SET 2. IR ADDRWRITE
+  BSDL.SET 2. DR * &Bank1Sel
+  BSDL.RUN
+)
+
+; now configure real chain
+BSDL.RESet
+BSDL.ParkState RTI
+BSDL.FILE ~~~~/../bsdl/arm_dap.bsd
+BSDL.FILE ~~~~/../bsdl/jtag_switcher.bsd
+
+; Check boundary scan chain
+BSDL.SOFTRESET
+IF !BSDL.CHECK.BYPASS()
+(
+  BSDL.BYPASSall
+  PRINT %ERROR "Bypass test failed"
+  ENDDO
+)
+IF !BSDL.CHECK.IDCODE()
+(
+  BSDL.IDCODEall
+  PRINT %ERROR "ID code test failed"
+  ENDDO
+)
+JTAG.UNLOCK
+
+; -----------------------------------------------------------------------------
+; Example 5: Activate Port 4 - toggle PS_MIO[17..20] of ZYNQUS ZU3G-SBVA484, read PS_MODE[0..3] lines
+; assume chain: JSwitch + ???? => JSwitch + FPGA-TAP + DUMMY/ARM-DAP
+; => add 64 linkage bits (IRPRE-BITS)
+BSDL.RESet
+BSDL.ParkState RTI
+BSDL.LINKAGE 64.
+BSDL.FILE ~~~~/../bsdl/jtag_switcher.bsd
+JTAG.LOCK
+
+; deselect all slaves
+BSDL.SET 2. IR DESEL
+BSDL.RUN.IR
+
+; write e.g. two SELECT register banks
+; use LINKAGE bits in order not to write random data to interim enabled slave port TAPs
+(
+  PRIVATE &Bank0Sel &Bank1Sel
+  &Bank0Sel=(0x0<<28.)|(0x1<<16.)|(0x1<<((4.-1.)*2.))
+  &Bank1Sel=(0x1<<28.)|(0x1<<16.)|(0x0)
+  BSDL.SET 2. IR ADDRWRITE
+  BSDL.SET 2. DR * &Bank0Sel
+  BSDL.RUN
+
+  BSDL.SET 2. IR ADDRWRITE
+  BSDL.SET 2. DR * &Bank1Sel
+  BSDL.RUN
+)
+
+; now configure real chain
+BSDL.RESet
+BSDL.ParkState RTI
+
+BSDL.Linkage 4. ; ARM-DAP / Dummy DAP
+;BSDL.FILE "C:\Daten\Xilinx\Vivado\2019.1\data\parts\xilinx\zynquplus\public\bsdl\xczu3eg_sbva484.bsd"
+BSDL.FILE "<path_to>Vivado/2019.1/data/parts/xilinx/zynquplus/public/bsdl/xczu3eg_sbva484.bsd"
+BSDL.Linkage 4. ; JtagSwitcher - alternative BSDL.FILE ~~~~/../jtag_switcher.bsd
+
+; Check boundary scan chain
+BSDL.SOFTRESET
+IF !BSDL.CHECK.BYPASS()
+(
+  BSDL.BYPASSall
+  PRINT %ERROR "Bypass test failed"
+  ENDDO
+)
+IF !BSDL.CHECK.IDCODE()
+(
+  BSDL.IDCODEall
+  PRINT %ERROR "ID code test failed"
+  ENDDO
+)
+
+; override PS_MODE lines - not sure if this sequence is correct
+; - switch PORTs to INPUT as they might be put to output by SW - otherwise SAMPLE would be enough
+BSDL.Set 2. IR EXTEST
+BSDL.Set 2. BSR * SAFE
+BSDL.Set 2. PORT PS_MODE0 X
+BSDL.Set 2. PORT PS_MODE1 X
+BSDL.Set 2. PORT PS_MODE2 X
+BSDL.Set 2. PORT PS_MODE3 X
+BSDL.RUN
+
+PRINTF "PS_MODE0: %x" BSDL.GetPortLevel(2.,"PS_MODE0")
+PRINTF "PS_MODE1: %x" BSDL.GetPortLevel(2.,"PS_MODE1")
+PRINTF "PS_MODE2: %x" BSDL.GetPortLevel(2.,"PS_MODE2")
+PRINTF "PS_MODE3: %x" BSDL.GetPortLevel(2.,"PS_MODE3")
+
+BSDL.SET 2. IR BYPASS
+BSDL.RUN
+
+BSDL.Set 2. IR EXTEST
+(
+  PRIVATE &i
+  &i=0.
+  RePeaT 100.
+  (
+    BSDL.SET 2. BSR * SAFE
+    IF (&i%4)==0.
+    (
+      BSDL.SET 2. PORT PS_MIO17 1
+      BSDL.SET 2. PORT PS_MIO18 0
+      BSDL.SET 2. PORT PS_MIO19 0
+      BSDL.SET 2. PORT PS_MIO20 0
+    )
+    ELSE IF (&i%4)==1.
+    (
+      BSDL.SET 2. PORT PS_MIO17 0
+      BSDL.SET 2. PORT PS_MIO18 1
+      BSDL.SET 2. PORT PS_MIO19 0
+      BSDL.SET 2. PORT PS_MIO20 0
+    )
+    ELSE IF (&i%4)==2.
+    (
+      BSDL.SET 2. PORT PS_MIO17 0
+      BSDL.SET 2. PORT PS_MIO18 0
+      BSDL.SET 2. PORT PS_MIO19 1
+      BSDL.SET 2. PORT PS_MIO20 0
+    )
+    ELSE IF (&i%4)==3.
+    (
+      BSDL.SET 2. PORT PS_MIO17 0
+      BSDL.SET 2. PORT PS_MIO18 0
+      BSDL.SET 2. PORT PS_MIO19 0
+      BSDL.SET 2. PORT PS_MIO20 1
+    )
+    BSDL.RUN
+    &i=&i+1.
+    WAIT 0.1s
+  )
+)
+BSDL.SET 2. IR BYPASS
+BSDL.RUN
+
+JTAG.UNLOCK

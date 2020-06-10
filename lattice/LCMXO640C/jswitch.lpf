@@ -1,0 +1,101 @@
+# The MIT License
+
+# Copyright (c) 2018 Lauterbach GmbH, Ingo Rohloff
+
+# Permission is hereby granted, free of charge,
+# to any person obtaining a copy of this software and
+# associated documentation files (the "Software"), to
+# deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify,
+# merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom
+# the Software is furnished to do so,
+# subject to the following conditions:
+
+# The above copyright notice and this permission notice
+# shall be included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+# ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+BLOCK RESETPATHS ;
+BLOCK ASYNCPATHS ;
+
+DEFINE PORT GROUP "dbg_ports" "oVtref" "iPinTck" "iPinTrst_n" "iPinTms" "iPinTdi" "oPinTdo";
+IOBUF GROUP "dbg_ports" IO_TYPE=LVCMOS33 PULLMODE=UP ;
+
+LOCATE COMP "oVtref" SITE "P8" ;
+
+LOCATE COMP "iPinTck" SITE "M8" ;
+LOCATE COMP "iPinTrst_n" SITE "P13" ;
+LOCATE COMP "iPinTms" SITE "P12" ;
+LOCATE COMP "iPinTdi" SITE "P11" ;
+LOCATE COMP "oPinTdo" SITE "P10" ;
+
+DEFINE PORT GROUP "slv1_ports" "oSlvTrst_n[1]" "oSlvTck[1]" "oSlvTms[1]" "oSlvTdi[1]" "iSlvTdo[1]";
+IOBUF GROUP "slv1_ports" IO_TYPE=LVCMOS25 PULLMODE=UP ;
+
+LOCATE COMP "oSlvTrst_n[1]" SITE "A5" ;
+LOCATE COMP "oSlvTck[1]" SITE "A4" ;
+LOCATE COMP "oSlvTms[1]" SITE "A3" ;
+LOCATE COMP "oSlvTdi[1]" SITE "A2" ;
+LOCATE COMP "iSlvTdo[1]" SITE "A1" ;
+
+DEFINE PORT GROUP "slv5_ports" "oSlvTrst_n[5]" "oSlvTck[5]" "oSlvTms[5]" "oSlvTdi[5]" "iSlvTdo[5]";
+IOBUF GROUP "slv5_ports" IO_TYPE=LVCMOS25 PULLMODE=UP ;
+
+LOCATE COMP "oSlvTrst_n[5]" SITE "A13" ;
+LOCATE COMP "oSlvTck[5]" SITE "A12" ;
+LOCATE COMP "oSlvTms[5]" SITE "A11" ;
+LOCATE COMP "oSlvTdi[5]" SITE "A9" ;
+LOCATE COMP "iSlvTdo[5]" SITE "A8" ;
+
+DEFINE PORT GROUP "slv6_ports" "oSlvTrst_n[6]" "oSlvTck[6]" "oSlvTms[6]" "oSlvTdi[6]" "iSlvTdo[6]";
+IOBUF GROUP "slv6_ports" IO_TYPE=LVCMOS25 PULLMODE=UP ;
+
+LOCATE COMP "oSlvTrst_n[6]" SITE "H14" ;
+LOCATE COMP "oSlvTck[6]" SITE "G14" ;
+LOCATE COMP "oSlvTms[6]" SITE "F14" ;
+LOCATE COMP "oSlvTdi[6]" SITE "E14" ;
+LOCATE COMP "iSlvTdo[6]" SITE "D14" ;
+
+DEFINE PORT GROUP "slv7_ports" "oSlvTrst_n[7]" "oSlvTck[7]" "oSlvTms[7]" "oSlvTdi[7]" "iSlvTdo[7]";
+IOBUF GROUP "slv7_ports" IO_TYPE=LVCMOS25 PULLMODE=UP ;
+
+LOCATE COMP "oSlvTrst_n[7]" SITE "K13" ;
+LOCATE COMP "oSlvTck[7]" SITE "J13" ;
+LOCATE COMP "oSlvTms[7]" SITE "H13" ;
+LOCATE COMP "oSlvTdi[7]" SITE "G13" ;
+LOCATE COMP "iSlvTdo[7]" SITE "F13" ;
+
+DEFINE PORT GROUP "slv2_ports" "oSlvTrst_n[2]" "oSlvTck[2]" "oSlvTms[2]" "oSlvTdi[2]" "iSlvTdo[2]";
+IOBUF GROUP "slv2_ports" IO_TYPE=LVCMOS18 PULLMODE=UP ;
+
+LOCATE COMP "oSlvTrst_n[2]" SITE "K1" ;
+LOCATE COMP "oSlvTck[2]" SITE "L1" ;
+LOCATE COMP "oSlvTms[2]" SITE "M1" ;
+LOCATE COMP "oSlvTdi[2]" SITE "N1" ;
+LOCATE COMP "iSlvTdo[2]" SITE "P1" ;
+
+DEFINE PORT GROUP "slv3_ports" "oSlvTrst_n[3]" "oSlvTck[3]" "oSlvTms[3]" "oSlvTdi[3]" "iSlvTdo[3]";
+IOBUF GROUP "slv3_ports" IO_TYPE=LVCMOS18 PULLMODE=UP ;
+
+LOCATE COMP "oSlvTrst_n[3]" SITE "B1" ;
+LOCATE COMP "oSlvTck[3]" SITE "C1" ;
+LOCATE COMP "oSlvTms[3]" SITE "D1" ;
+LOCATE COMP "oSlvTdi[3]" SITE "G1" ;
+LOCATE COMP "iSlvTdo[3]" SITE "H1" ;
+
+DEFINE PORT GROUP "slv4_ports" "oSlvTrst_n[4]" "oSlvTck[4]" "oSlvTms[4]" "oSlvTdi[4]" "iSlvTdo[4]";
+IOBUF GROUP "slv4_ports" IO_TYPE=LVCMOS18 PULLMODE=UP ;
+
+LOCATE COMP "oSlvTrst_n[4]" SITE "B2" ;
+LOCATE COMP "oSlvTck[4]" SITE "C2" ;
+LOCATE COMP "oSlvTms[4]" SITE "E2" ;
+LOCATE COMP "oSlvTdi[4]" SITE "F2" ;
+LOCATE COMP "iSlvTdo[4]" SITE "G2" ;

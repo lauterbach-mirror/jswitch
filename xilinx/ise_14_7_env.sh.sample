@@ -1,0 +1,5 @@
+ISEINST=/home/irohloff/ssd/xilinx/14.7
+ISEOS=lin64
+
+export LD_LIBRARY_PATH=${ISEINST}/ISE_DS/common/lib/${ISEOS}:${ISEINST}/ISE_DS/ISE/lib/${ISEOS}
+export PATH=${ISEINST}/ISE_DS/ISE/bin/${ISEOS}:/usr/bin:/bin

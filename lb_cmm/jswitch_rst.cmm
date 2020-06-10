@@ -1,0 +1,31 @@
+// Resets ALL control registers in the JTAG Switcher
+// Consequence: All Slave TAPs will be de-selected.
+
+// Call with
+//   RUN jswitch_rst
+
+// make sure we use setting of SYStem.JtagClock
+// as JTAG TCK frequency
+JTAG.USECLOCK ON
+
+JTAG.LOCK
+// Go through Test-Logic-Reset to Run-Test/Idle
+JTAG.SHIFTTMS 1 1 1 1 1 1 1 1 1 1 0 0 0 0
+GOSUB rstRegs
+JTAG.UNLOCK
+
+END
+
+
+rstRegs:
+  // RTI -> Shift-IR
+  JTAG.SHIFTTMS 1 1 0 0
+  // Shift in a lot of '1' bits as IRPRE, to make sure all
+  // slave IRs in the chain are loaded with BYPASS
+  // Shift in "reset registers" instruction (0x6) last
+  JTAG.SHIFTREG %LONG 0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF 0x6FFFFFFF
+  // Exit1-IR -> RTI, stay 8 cycles in Run-Test/Idle
+  // to make sure reset is activated and has an effect.
+  // Go to Test-Logic-Reset afterwards.
+  JTAG.SHIFTTMS 1 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1
+RETURN

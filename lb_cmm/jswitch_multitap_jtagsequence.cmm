@@ -1,0 +1,395 @@
+; --------------------------------------------------------------------------------
+; @Title: Handle JSwitch within a ARM/ARM64/TRICORE debugsession
+; @Description:
+;   Parameters:
+;     IRPRE=<x>  - JTAG coordinates behind the JSWITCH Port, x must be decimal
+;     IRPOST=<x> - see IRPRE
+;     DRPRE=<x>  - see IRPRE
+;     DRPOST=<x> - see IRPRE
+;     PORT=<x>   - JSwitch Port to use, x must be decimal 1<=x<=120
+;     TDOSYNC    - activate TDOSYNC feature for used port
+;
+;   Note:
+;     * DAP[IR|DR][PRE|POST]"Fixed" values are not handled!
+;     * SYStem.CONFIG TAPState, MULTITAP, DAP[IR|DR][PRE|POST], SLAVE
+;       SYStem.Option TRST
+;       are modified by this script
+;     * if TDOSYNC is not passed, the script disables the TDOSYNC in the design
+;
+;   Usage:
+;     DO scriptname PORT=1
+;       -> a single ARM-DAP based system connected to PORT 1
+;     DO scriptname PORT=5 IRPOST=12 DRPOST=1
+;       -> daisy chained ARM-DAP connected to PORT 5
+;          behind PORT5 is one controller with IRLENGTH=12 in front of ARM-DAP
+; @Board: JSwitch "TheKraken" IP
+; @Keywords: JSWITCH
+; @Author: AME
+; @Copyright: (C) 1989-2019 Lauterbach GmbH, licensed for use with TRACE32(R) only
+; --------------------------------------------------------------------------------
+; $Id: f77c2fd5104aba37d49cea463d5df2290936f4da $
+
+PRIVATE &sParams &nPort &nUserIrPost &nUserDrPost &nUserIrPre &nUserDrPre &bTdoSync &bStealth
+ENTRY %LINE &sParams
+
+; sanity check
+IF !PRACTICE.CoMmanD.AVAILable(SYStem.CONFIG.MULTITAP.JtagSEQuence)
+(
+  PRINT %ERROR "Wrong Usage!"
+  STOP
+  ENDDO FALSE()
+)
+IF !((CPUFAMILY()=="ARM")||(CPUFAMILY()=="TRICORE"))
+(
+  PRINT %WARNING OS.PPF() ": Use with care!!!"
+)
+
+GOSUB ParseParameters "&sParams"
+RETURNVALUES &nPort &nUserIrPost &nUserDrPost &nUserIrPre &nUserDrPre &bTdoSync &bStealth
+
+PRIVATE &nMaxPorts &bSupportDeselectAll &bSupportTdoSync &bSupportStealth
+DO ~~~~/jswitch_multitap_jtagsequence_cfg.cmm
+RETURNVALUES &nMaxPorts &bSupportDeselectAll &bSupportTdoSync &bSupportStealth
+
+; some helper macros
+PRIVATE &sGotoShiftDr &sGotoShiftIr &sGotoRTI &sTAPResetGotoRTI
+PRIVATE &sStealthExitDrGotoShiftDrNoRti
+PRIVATE &nDutIrWidth &nDutDrBypass &bDutArmDap
+PRIVATE &nJSwitchIrWidth &nJSwitchDrBypass
+PRIVATE &nTdoSyncIrWidth &nTdoSyncDrBypass
+PRIVATE &nIrPost &nDrPost &nIrPre &nDrPre
+&sGotoShiftDr="JTAG.SEQuence.ADD , RawShift 3. 0x1 0x0"
+&sGotoShiftIr="JTAG.SEQuence.ADD , RawShift 4. 0x3 0x0"
+; stay for 8 cycles in RTI as documented
+&sGotoRTI="JTAG.SEQuence.ADD , RawShift 10. 0x1 0x0"
+&sTAPResetGotoRTI="JTAG.SEQuence.ADD , RawShift 7. 0x3F 0x0"
+&sStealthExitDrGotoShiftDrNoRti="JTAG.SEQuence.ADD , RawShift 4. 0x03 0x0"
+GOSUB getDutIrWidth
+RETURNVALUES &nDutIrWidth &bDutArmDap
+&nDutDrBypass=1.
+&nJSwitchIrWidth=4.
+&nJSwitchDrBypass=1.
+IF (&bStealth)
+(
+  &nJSwitchIrWidth=0.
+  &nJSwitchDrBypass=0.
+)
+&nTdoSyncIrWidth=0.
+&nTdoSyncDrBypass=0.
+IF ((&bTdoSync)&&(&bSupportTdoSync))
+(
+  &nTdoSyncIrWidth=1.
+  &nTdoSyncDrBypass=1.
+)
+
+; merge User specified PRE/POST parameters with TRACE32 preconfigured values
+PRIVATE &nIrPost &nDrPost &nIrPre &nDrPre
+GOSUB calculateJtagPrePost "&bDutArmDap" "&nUserIrPost" "&nUserDrPost" "&nUserIrPre" "&nUserDrPre"
+RETURNVALUES &nIrPost &nDrPost &nIrPre &nDrPre
+
+IF (&bStealth&&!&bSupportStealth)
+(
+  PRINT %ERROR "Stealth mode not supported!"
+  STOP
+  ENDDO FALSE()
+)
+
+; calculate shift values within Bank and the Bank itself
+PRIVATE &nBank &nBankPort
+&nPort=&nPort-1.
+&nBank=CONVert.INTTOHEX(&nPort>>3.)
+&nBankPort=CONVert.INTTOHEX(&nPort&0x7)
+
+; --------------------------------------------------------------------------------
+; <JtagSequence>
+SYStem.CONFIG.MULTITAP.JtagSEQuence Attach   default
+SYStem.CONFIG.MULTITAP.JtagSEQuence SELect   none
+SYStem.CONFIG.MULTITAP.JtagSEQuence DeSELect none
+SYStem.CONFIG.MULTITAP NONE
+
+JTAG.SEQuence.Delete JSwitchDisableWithTLR
+JTAG.SEQuence.Delete JSwitchAttach
+JTAG.SEQuence.Delete JSwitchEnable
+JTAG.SEQuence.Delete JSwitchDisable
+JTAG.SEQuence.Delete JSwitchReset
+
+
+JTAG.SEQuence.Create JSwitchEnable
+;                                   <IrPreRel>            <IrPostRel>                <DrPreRel>             <DrPostRel>
+JTAG.SEQuence.ADD , PrePostRelative &nIrPost+&nDutIrWidth -&nIrPost-&nJSwitchIrWidth &nDrPost+&nDutDrBypass -&nDrPost-&nJSwitchDrBypass
+&sGotoShiftIr
+JTAG.SEQuence.ADD , ShiftIrAndExit 4. 0y1101
+&sGotoRTI
+&sGotoShiftDr
+JTAG.SEQuence.ADD , ShiftDrAndExit 32. (&nBank<<28.)|0x00010000|(0x1<<(&nBankPort*2))
+IF (&bStealth)
+(
+  &sStealthExitDrGotoShiftDrNoRti
+  JTAG.SEQuence.ADD , ShiftDrAndExit 32. 0xF0020001
+)
+&sGotoRTI
+
+
+JTAG.SEQuence.Create JSwitchDisable
+IF (&bStealth)
+(
+  &sGotoShiftIr
+  ; sequence: 0xff -> BYPASS, then 8bits 0x0 (initialize LFSR), then magic LFSR sequence, 0xff -> BYPASS
+  JTAG.SEQuence.ADD , RawShift &nIrPost+&nDutIrWidth 0x0 0xffffffffffffffff
+  JTAG.SEQuence.ADD , RawShift 8.  0x0 0x0
+  JTAG.SEQuence.ADD , RawShift 32. 0x0 0x525FCFB7
+  JTAG.SEQuence.ADD , RawShift 32. 0x0 0x19A63957
+  JTAG.SEQuence.ADD , RawShift 32. 0x0 0x2D6113BD
+  JTAG.SEQuence.ADD , RawShift 32. 0x0 0x8143641E
+  JTAG.SEQuence.ADD , RawShift &nIrPost+&nDutIrWidth (0x1<<(&nIrPost+&nDutIrWidth-1.)) 0xffffffffffffffff
+  &sGotoRTI
+)
+ELSE IF (&bSupportDeselectAll)
+(
+  ;                                   <IrPreRel>                    <IrPostRel>                <DrPreRel>                     <DrPostRel>
+  JTAG.SEQuence.ADD , PrePostRelative &nIrPost+&nDutIrWidth -&nIrPost-&nJSwitchIrWidth &nDrPost+&nDutDrBypass -&nDrPost-&nJSwitchDrBypass
+  &sGotoShiftIr
+  JTAG.SEQuence.ADD , ShiftIrAndExit 4. 0y0111
+  &sGotoRTI
+)
+ELSE
+(
+  ;                                   <IrPreRel>                    <IrPostRel>                <DrPreRel>                     <DrPostRel>
+  JTAG.SEQuence.ADD , PrePostRelative &nIrPost+&nDutIrWidth -&nIrPost-&nJSwitchIrWidth &nDrPost+&nDutDrBypass -&nDrPost-&nJSwitchDrBypass
+  &sGotoShiftIr
+  JTAG.SEQuence.ADD , ShiftIrAndExit 4. 0y1101
+  &sGotoRTI
+  &sGotoShiftDr
+  JTAG.SEQuence.ADD , ShiftDrAndExit 32. (&nBank<<28.)|0x00010000|(0x2<<(&nBankPort*2))
+  &sGotoRTI
+)
+
+JTAG.SEQuence.Create JSwitchAttach
+&sTAPResetGotoRTI
+IF (&bSupportStealth)
+(
+  &sGotoShiftIr
+  ; sequence: 0xff -> BYPASS, then 8bits 0x0 (initialize LFSR), then magic LFSR sequence, 0xff -> BYPASS
+  JTAG.SEQuence.ADD , RawShift 64. 0x0      0xffffffffffffffff
+  JTAG.SEQuence.ADD , RawShift 64. 0x0      0xffffffffffffffff
+  JTAG.SEQuence.ADD , RawShift 8.  0x0      0x0
+  JTAG.SEQuence.ADD , RawShift 64. 0x0      0x19A63957525FCFB7
+  JTAG.SEQuence.ADD , RawShift 64. 0x0      0x8143641E2D6113BD
+  JTAG.SEQuence.ADD , RawShift 64. 0x0      0xffffffffffffffff
+  JTAG.SEQuence.ADD , RawShift 64. (1<<63.) 0xffffffffffffffff
+  &sGotoRTI
+)
+IF (&bSupportDeselectAll)
+(
+  ; deselect all slave TAPs
+  &sGotoShiftIr
+  JTAG.SEQuence.ADD , RawShift 64. 0x0 0xffffffffffffffff
+  JTAG.SEQuence.ADD , RawShift 64. 0x0 0xffffffffffffffff
+  JTAG.SEQuence.ADD , RawShift 4. 0y1000 0y0111
+  &sGotoRTI
+)
+ELSE
+(
+  ; deselect all slave TAPs - iterate over all ports
+  PRIVATE &nCurBank
+  &nCurBank=0.
+  RePeaT ((&nMaxPorts-1.)>>3.)+1.
+  (
+    &sGotoShiftIr
+    JTAG.SEQuence.ADD , RawShift 64. 0x0 0xffffffffffffffff
+    JTAG.SEQuence.ADD , RawShift 64. 0x0 0xffffffffffffffff
+    JTAG.SEQuence.ADD , RawShift 4. 0y1000 0y1101
+    &sGotoRTI
+    &sGotoShiftDr
+    JTAG.SEQuence.ADD , RawShift 32. 0x0 0xffffffff
+    JTAG.SEQuence.ADD , RawShift 32. 0x80000000 (&nCurBank<<28.)|0x00010000|(0xAAAA)
+    &sGotoRTI
+    &nCurBank=&nCurBank+1.
+  )
+)
+IF (&bSupportTdoSync)
+(
+  ; configure TDOSYNC feature
+  ;                                   <IrPreRel>            <IrPostRel>                <DrPreRel>             <DrPostRel>
+  JTAG.SEQuence.ADD , PrePostRelative &nIrPost+&nDutIrWidth -&nIrPost-&nJSwitchIrWidth &nDrPost+&nDutDrBypass -&nDrPost-&nJSwitchDrBypass
+  &sGotoShiftIr
+  JTAG.SEQuence.ADD , ShiftIrAndExit 4. 0y1101
+  &sGotoRTI
+  &sGotoShiftDr
+  IF (&bTdoSync)
+  (
+    JTAG.SEQuence.ADD , ShiftDrAndExit 32. (&nBank<<28.)|0x00020000|(0x1<<(&nBankPort*2))
+  )
+  ELSE
+  (
+    JTAG.SEQuence.ADD , ShiftDrAndExit 32. (&nBank<<28.)|0x00020000|(0x2<<(&nBankPort*2))
+  )
+  &sGotoRTI
+)
+JTAG.SEQuence.ADD , CALL JSwitchEnable
+&sTAPResetGotoRTI
+
+JTAG.SEQuence.Create JSwitchReset
+&sTAPResetGotoRTI
+IF (&bSupportStealth)
+(
+  &sGotoShiftIr
+  ; sequence: 0xff -> BYPASS, then 8bits 0x0 (initialize LFSR), then magic LFSR sequence, 0xff -> BYPASS
+  JTAG.SEQuence.ADD , RawShift 64. 0x0      0xffffffffffffffff
+  JTAG.SEQuence.ADD , RawShift 64. 0x0      0xffffffffffffffff
+  JTAG.SEQuence.ADD , RawShift 8.  0x0      0x0
+  JTAG.SEQuence.ADD , RawShift 64. 0x0      0x19A63957525FCFB7
+  JTAG.SEQuence.ADD , RawShift 64. 0x0      0x8143641E2D6113BD
+  JTAG.SEQuence.ADD , RawShift 64. 0x0      0xffffffffffffffff
+  JTAG.SEQuence.ADD , RawShift 64. (1<<63.) 0xffffffffffffffff
+  &sGotoRTI
+)
+&sGotoShiftIr
+JTAG.SEQuence.ADD , RawShift 64. 0x0 0xffffffffffffffff
+JTAG.SEQuence.ADD , RawShift 64. 0x0 0xffffffffffffffff
+; do not use ShiftIrAndExit here
+JTAG.SEQuence.ADD , RawShift 4. 0y1000 0y0110
+&sGotoRTI
+
+JTAG.SEQuence.Create JSwitchDisableWithTLR
+&sTAPResetGotoRTI
+JTAG.SEQuence.ADD , CALL JSwitchDisable
+; </JtagSequence>
+; --------------------------------------------------------------------------------
+
+SYStem.CONFIG TAPState RunTestIdle
+SYStem.CONFIG SLAVE OFF
+IF PRACTICE.CoMmanD.AVAILable(SYStem.Option.TRST)
+(
+  SYStem.Option TRST OFF
+)
+
+IF &bDutArmDap
+(
+  SYStem.CONFIG DAPIRPOST &nUserIrPost+&nJSwitchIrWidth
+  SYStem.CONFIG DAPDRPOST &nUserDrPost+&nJSwitchDrBypass
+  SYStem.CONFIG DAPIRPRE  &nUserIrPre+&nTdoSyncIrWidth
+  SYStem.CONFIG DAPDRPRE  &nUserDrPre+&nTdoSyncDrBypass
+)
+ELSE
+(
+  SYStem.CONFIG IRPOST &nUserIrPost+&nJSwitchIrWidth
+  SYStem.CONFIG DRPOST &nUserDrPost+&nJSwitchDrBypass
+  SYStem.CONFIG IRPRE  &nUserIrPre+&nTdoSyncIrWidth
+  SYStem.CONFIG DRPRE  &nUserDrPre+&nTdoSyncDrBypass
+)
+
+
+SYStem.CONFIG.MULTITAP.JtagSEQuence ON
+SYStem.CONFIG.MULTITAP.JtagSEQuence Attach   JSwitchAttach
+SYStem.CONFIG.MULTITAP.JtagSEQuence SELect   JSwitchEnable
+SYStem.CONFIG.MULTITAP.JtagSEQuence DeSELect JSwitchDisable
+
+ENDDO TRUE()
+
+; --------------------------------------------------------------------------------
+; SUBROUTINES
+; --------------------------------------------------------------------------------
+
+ParseParameters: ;(params)
+(
+  PRIVATE &params &nPort &nIrPost &nDrPost &nIrPre &nDrPre &bTdoSync &bStealth &tmp
+  PARAMETERS &params
+  &nPort=STRing.SCANAndExtract("&params","PORT=","0")
+  &nIrPost=STRing.SCANAndExtract("&params","IRPOST=","0")
+  &nDrPost=STRing.SCANAndExtract("&params","DRPOST=","0")
+  &nIrPre=STRing.SCANAndExtract("&params","IRPRE=","0")
+  &nDrPre=STRing.SCANAndExtract("&params","DRPRE=","0")
+  &bTdoSync=STRing.SCAN("&params","TDOSYNC",0.)>=0.
+  &bStealth=STRing.SCAN("&params","STEALTH",0.)>=0.
+
+  (
+    ; try to convert all parameters to decimal ;-)
+    ON ERROR GOSUB
+    (
+      PRINT %ERROR "Wrong Usage"
+      STOP
+      ENDDO FALSE()
+    )
+    &nPort="&nPort."
+    &nIrPost="&nIrPost."
+    &nDrPost="&nDrPost."
+    &nIrPre="&nIrPre."
+    &nDrPre="&nDrPre."
+    ; this will fail if a parameter is a string
+    &tmp=&nPort+&nIrPost+&nDrPost+&nIrPre+&nDrPre+0.
+    ON ERROR inherit
+  )
+  ; sanity check
+  IF (&nPort<=0.)
+  (
+    PRINT %ERROR "Wrong Usage"
+    STOP
+    ENDDO FALSE()
+  )
+
+  RETURN "&nPort" "&nIrPost" "&nDrPost" "&nIrPre" "&nDrPre" "&bTdoSync" "&bStealth"
+)
+
+getDutIrWidth: ;()
+(
+  PRIVATE &nDutIrWidth &bArmDap
+  ; tbd: check JTAG-AP
+  &bArmDap=PRACTICE.CoMmanD.AVAILable(SYStem.CONFIG.DAPIRPRE)&&COMPonent.AVAILABLE("COREDEBUG")
+  IF CPUFAMILY()=="TRICORE"
+  (
+    &nDutIrWidth=8.
+  )
+  ELSE IF CPUFAMILY()=="ARM"
+  (
+    ; ARM-DAP or ARM??
+    &nDutIrWidth=4.
+  )
+  ELSE IF CPUFAMILY()=="V800"
+  (
+    &nDutIrWidth=8.
+  )
+  ELSE IF &bArmDap
+  (
+    ; ARM-DAP
+    &nDutIrWidth=4.
+  )
+  ELSE IF CPUFAMILY()=="CEVA-X"
+  (
+    &nDutIrWidth=32.
+  )
+  ELSE
+  (
+    PRINT %ERROR OS.PPF() ": Architecture not supported!!!"
+    END
+  )
+  RETURN "&nDutIrWidth" "&bArmDap"
+)
+
+calculateJtagPrePost: ;(bArmDap nUserIrPost nUserDrPost nUserIrPre nUserDrPre)
+(
+  PRIVATE &bArmDap &nIrPost &nDrPost &nIrPre &nDrPre
+  PARAMETERS &bArmDap &nIrPost &nDrPost &nIrPre &nDrPre
+  IF PRACTICE.FUNCtion.AVAILable(SYStem.CONFIG.JTAGTAP)
+  (
+    IF &bArmDap
+    (
+      &nIrPost=&nIrPost+SYStem.CONFIG.JTAGTAP(DAPIRPOST.FIXED,0)
+      &nDrPost=&nDrPost+SYStem.CONFIG.JTAGTAP(DAPDRPOST.FIXED,0)
+      &nIrPre=&nIrPre+SYStem.CONFIG.JTAGTAP(DAPIRPRE.FIXED,0)
+      &nDrPre=&nDrPre+SYStem.CONFIG.JTAGTAP(DAPDRPRE.FIXED,0)
+    )
+    ELSE
+    (
+      &nIrPost=&nIrPost+SYStem.CONFIG.JTAGTAP(IRPOST.FIXED,0)
+      &nDrPost=&nDrPost+SYStem.CONFIG.JTAGTAP(DRPOST.FIXED,0)
+      &nIrPre=&nIrPre+SYStem.CONFIG.JTAGTAP(IRPRE.FIXED,0)
+      &nDrPre=&nDrPre+SYStem.CONFIG.JTAGTAP(DRPRE.FIXED,0)
+    )
+  )
+  ELSE
+  (
+    PRINT %WARNing OS.PPF()+": SW version too old - use with care!"
+  )
+  RETURN "&nIrPost" "&nDrPost" "&nIrPre" "&nDrPre"
+)

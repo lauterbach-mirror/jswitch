@@ -1,0 +1,160 @@
+# The MIT License
+
+# Copyright (c) 2019 Lauterbach GmbH, Alexander Merkle
+
+# Permission is hereby granted, free of charge,
+# to any person obtaining a copy of this software and
+# associated documentation files (the >Software<), to
+# deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify,
+# merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom
+# the Software is furnished to do so,
+# subject to the following conditions:
+
+# The above copyright notice and this permission notice
+# shall be included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED >AS IS<, WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+# ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# Version:            2017.08.27940
+# Family & Device:    iCE40HX8K
+# Package:            CT256
+# Board:              Olimex iCE40HX8K-EVB
+
+# ##############################################################################
+
+### Input
+set_io iPinTck G1 -io_std SB_LVCMOS
+set_io iPinTdi B2 -io_std SB_LVCMOS -pullup yes
+set_io iPinTms F5 -io_std SB_LVCMOS -pullup yes
+set_io oPinTdo C2 -io_std SB_LVCMOS
+set_io iPinRst_n F4 -io_std SB_LVCMOS -pullup yes
+set_io iPinTrst_n E4 -io_std SB_LVCMOS -pullup yes
+set_io oPinRtck C1 -io_std SB_LVCMOS
+set_io GND_IN[0] J2 -io_std SB_LVCMOS
+set_io GND_IN[1] H1 -io_std SB_LVCMOS
+set_io GND_IN[2] J5 -io_std SB_LVCMOS
+set_io GND_IN[3] H2 -io_std SB_LVCMOS
+set_io GND_IN[4] J4 -io_std SB_LVCMOS
+set_io GND_IN[5] G2 -io_std SB_LVCMOS
+
+### Slave 1 - EXT1
+set_io oSlvTck[1] C11 -io_std SB_LVCMOS
+set_io oSlvTdi[1] B10 -io_std SB_LVCMOS
+set_io oSlvTms[1] B12 -io_std SB_LVCMOS
+set_io iSlvTdo[1] B13 -io_std SB_LVCMOS -pullup yes
+set_io oSlvRst_n[1] B11 -io_std SB_LVCMOS
+set_io oSlvTrst_n[1] A16 -io_std SB_LVCMOS
+set_io oSlvEn_n[1] A15 -io_std SB_LVCMOS
+set_io oSlvTmsEn_n[1] D13 -io_std SB_LVCMOS
+set_io oSlvTdiEn_n[1] B15 -io_std SB_LVCMOS
+set_io GND_EXT1[0] B7 -io_std SB_LVCMOS
+set_io GND_EXT1[1] C7 -io_std SB_LVCMOS
+set_io GND_EXT1[2] A7 -io_std SB_LVCMOS
+set_io GND_EXT1[3] B8 -io_std SB_LVCMOS
+set_io GND_EXT1[4] D8 -io_std SB_LVCMOS
+set_io GND_EXT1[5] B9 -io_std SB_LVCMOS
+set_io GND_EXT1[6] F7 -io_std SB_LVCMOS
+set_io GND_EXT1[7] C8 -io_std SB_LVCMOS
+set_io GND_EXT1[8] F9 -io_std SB_LVCMOS
+set_io GND_EXT1[9] A9 -io_std SB_LVCMOS
+set_io GND_EXT1[10] D9 -io_std SB_LVCMOS
+set_io GND_EXT1[11] E9 -io_std SB_LVCMOS
+set_io GND_EXT1[12] C9 -io_std SB_LVCMOS
+set_io GND_EXT1[13] D10 -io_std SB_LVCMOS
+set_io GND_EXT1[14] A11 -io_std SB_LVCMOS
+set_io GND_EXT1[15] A10 -io_std SB_LVCMOS
+
+### Slave 2 - EXT2
+set_io oSlvTck[2] A1 -io_std SB_LVCMOS
+set_io oSlvTdi[2] B3 -io_std SB_LVCMOS
+set_io oSlvTms[2] C4 -io_std SB_LVCMOS
+set_io iSlvTdo[2] A2 -io_std SB_LVCMOS -pullup yes
+set_io oSlvRst_n[2] D4 -io_std SB_LVCMOS
+set_io oSlvTrst_n[2] E6 -io_std SB_LVCMOS
+set_io oSlvEn_n[2] B4 -io_std SB_LVCMOS
+set_io oSlvTmsEn_n[2] D7 -io_std SB_LVCMOS
+set_io oSlvTdiEn_n[2] C6 -io_std SB_LVCMOS
+set_io GND_EXT2[0] J10 -io_std SB_LVCMOS
+set_io GND_EXT2[1] M16 -io_std SB_LVCMOS
+set_io GND_EXT2[2] K12 -io_std SB_LVCMOS
+set_io GND_EXT2[3] L14 -io_std SB_LVCMOS
+set_io GND_EXT2[4] L13 -io_std SB_LVCMOS
+set_io GND_EXT2[5] N16 -io_std SB_LVCMOS
+set_io GND_EXT2[6] L12 -io_std SB_LVCMOS
+set_io GND_EXT2[7] M14 -io_std SB_LVCMOS
+set_io GND_EXT2[8] M13 -io_std SB_LVCMOS
+set_io GND_EXT2[9] P16 -io_std SB_LVCMOS
+set_io GND_EXT2[10] P15 -io_std SB_LVCMOS
+set_io GND_EXT2[11] P14 -io_std SB_LVCMOS
+set_io GND_EXT2[12] R15 -io_std SB_LVCMOS
+set_io GND_EXT2[13] R14 -io_std SB_LVCMOS
+set_io GND_EXT2[14] C3 -io_std SB_LVCMOS
+set_io GND_EXT2[15] D3 -io_std SB_LVCMOS
+
+### Slave 3 - EXT3
+set_io oSlvTck[3] J16 -io_std SB_LVCMOS
+set_io oSlvTdi[3] H16 -io_std SB_LVCMOS
+set_io oSlvTms[3] H11 -io_std SB_LVCMOS
+set_io iSlvTdo[3] J12 -io_std SB_LVCMOS -pullup yes
+set_io oSlvRst_n[3] H14 -io_std SB_LVCMOS
+set_io oSlvTrst_n[3] K16 -io_std SB_LVCMOS
+set_io oSlvEn_n[3] J14 -io_std SB_LVCMOS
+set_io oSlvTmsEn_n[3] L16 -io_std SB_LVCMOS
+set_io oSlvTdiEn_n[3] J11 -io_std SB_LVCMOS
+set_io GND_EXT3[0] E14 -io_std SB_LVCMOS
+set_io GND_EXT3[1] F11 -io_std SB_LVCMOS
+set_io GND_EXT3[2] D15 -io_std SB_LVCMOS
+set_io GND_EXT3[3] F12 -io_std SB_LVCMOS
+set_io GND_EXT3[4] F14 -io_std SB_LVCMOS
+set_io GND_EXT3[5] G12 -io_std SB_LVCMOS
+set_io GND_EXT3[6] D16 -io_std SB_LVCMOS
+set_io GND_EXT3[7] G13 -io_std SB_LVCMOS
+set_io GND_EXT3[8] E16 -io_std SB_LVCMOS
+set_io GND_EXT3[9] G14 -io_std SB_LVCMOS
+set_io GND_EXT3[10] F15 -io_std SB_LVCMOS
+set_io GND_EXT3[11] G11 -io_std SB_LVCMOS
+set_io GND_EXT3[12] F16 -io_std SB_LVCMOS
+set_io GND_EXT3[13] G10 -io_std SB_LVCMOS
+set_io GND_EXT3[14] G15 -io_std SB_LVCMOS
+set_io GND_EXT3[15] H12 -io_std SB_LVCMOS
+
+### Slave 4 - EXT4
+set_io oSlvTck[4] K1 -io_std SB_LVCMOS
+set_io oSlvTdi[4] L1 -io_std SB_LVCMOS
+set_io oSlvTms[4] L4 -io_std SB_LVCMOS
+set_io iSlvTdo[4] R16 -io_std SB_LVCMOS -pullup yes
+set_io oSlvRst_n[4] K4 -io_std SB_LVCMOS
+set_io oSlvTrst_n[4] N12 -io_std SB_LVCMOS
+set_io oSlvEn_n[4] M12 -io_std SB_LVCMOS
+set_io oSlvTmsEn_n[4] B16 -io_std SB_LVCMOS
+set_io oSlvTdiEn_n[4] F13 -io_std SB_LVCMOS
+set_io GND_EXT4[0] N4 -io_std SB_LVCMOS
+set_io GND_EXT4[1] R1 -io_std SB_LVCMOS
+set_io GND_EXT4[2] M5 -io_std SB_LVCMOS
+set_io GND_EXT4[3] P2 -io_std SB_LVCMOS
+set_io GND_EXT4[4] M4 -io_std SB_LVCMOS
+set_io GND_EXT4[5] P1 -io_std SB_LVCMOS
+set_io GND_EXT4[6] N3 -io_std SB_LVCMOS
+set_io GND_EXT4[7] L5 -io_std SB_LVCMOS
+set_io GND_EXT4[8] M3 -io_std SB_LVCMOS
+set_io GND_EXT4[9] M6 -io_std SB_LVCMOS
+set_io GND_EXT4[10] N2 -io_std SB_LVCMOS
+set_io GND_EXT4[11] L7 -io_std SB_LVCMOS
+set_io GND_EXT4[12] M2 -io_std SB_LVCMOS
+set_io GND_EXT4[13] K5 -io_std SB_LVCMOS
+set_io GND_EXT4[14] L3 -io_std SB_LVCMOS
+set_io GND_EXT4[15] L6 -io_std SB_LVCMOS
+
+
+
+
+
+

@@ -1,0 +1,84 @@
+# The MIT License
+
+# Copyright (c) 2018 Lauterbach GmbH, Ingo Rohloff
+
+# Permission is hereby granted, free of charge,
+# to any person obtaining a copy of this software and
+# associated documentation files (the "Software"), to
+# deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify,
+# merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom
+# the Software is furnished to do so,
+# subject to the following conditions:
+
+# The above copyright notice and this permission notice
+# shall be included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+# ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+BLOCK RESETPATHS ;
+BLOCK ASYNCPATHS ;
+
+DEFINE PORT GROUP "dbg_pins" "oVtref" "iPinTck" "oPinRtck" "iPinTrst_n" "iPinTms" "iPinTdi" "oPinTdo" "iPinRst_n";
+IOBUF GROUP "dbg_pins" IO_TYPE=LVCMOS33 PULLMODE=UP ;
+
+# J6 on breakout board.
+LOCATE COMP "oVtref" SITE "D5" ;
+LOCATE COMP "iPinTrst_n" SITE "D6" ;
+LOCATE COMP "iPinTdi" SITE "C5" ;
+LOCATE COMP "iPinTms" SITE "C4" ;
+LOCATE COMP "iPinTck" SITE "D4" ;
+LOCATE COMP "oPinRtck" SITE "D3" ;
+LOCATE COMP "oPinTdo" SITE "A3" ;
+
+LOCATE COMP "iPinRst_n" SITE "A2" ;
+
+DEFINE PORT GROUP "slv1_pins" "oSlvTrst_n[1]" "oSlvTck[1]" "oSlvTms[1]" "oSlvTdi[1]" "iSlvTdo[1]" "oSlvEn_n[1]" "oSlvRst_n[1]";
+IOBUF GROUP "slv1_pins" IO_TYPE=LVCMOS33 PULLMODE=UP ;
+
+# J4 on breakout board
+LOCATE COMP "oSlvTrst_n[1]" SITE "C2" ;
+LOCATE COMP "oSlvTdi[1]" SITE "G1" ;
+LOCATE COMP "oSlvTms[1]" SITE "H3" ;
+LOCATE COMP "oSlvTck[1]" SITE "F1" ;
+LOCATE COMP "iSlvTdo[1]" SITE "D1" ;
+
+LOCATE COMP "oSlvEn_n[1]" SITE "D2" ;
+LOCATE COMP "oSlvRst_n[1]" SITE "H1" ;
+
+
+DEFINE PORT GROUP "slv2_pins" "oSlvTrst_n[2]" "oSlvTck[2]" "oSlvTms[2]" "oSlvTdi[2]" "iSlvTdo[2]" "oSlvEn_n[2]" "oSlvRst_n[2]";
+IOBUF GROUP "slv2_pins" IO_TYPE=LVCMOS33 PULLMODE=UP ;
+
+# J7 on breakout board
+LOCATE COMP "oSlvTrst_n[2]" SITE "C16" ;
+LOCATE COMP "oSlvTdi[2]" SITE "G15" ;
+LOCATE COMP "oSlvTms[2]" SITE "H13" ;
+LOCATE COMP "oSlvTck[2]" SITE "G16" ;
+LOCATE COMP "iSlvTdo[2]" SITE "E16" ;
+
+LOCATE COMP "oSlvEn_n[2]" SITE "D16" ;
+LOCATE COMP "oSlvRst_n[2]" SITE "H15" ;
+
+#######################################
+# LEDs controllable via JTAG
+# WARNING same as some pins on J9 !
+
+DEFINE PORT GROUP "leds" "oLeds_n[*]";
+IOBUF GROUP "leds" IO_TYPE=LVCMOS33 PULLMODE=UP ;
+
+LOCATE COMP "oLeds_n[0]" SITE "P16" ;
+LOCATE COMP "oLeds_n[1]" SITE "P15" ;
+LOCATE COMP "oLeds_n[2]" SITE "R16" ;
+LOCATE COMP "oLeds_n[3]" SITE "R15" ;
+LOCATE COMP "oLeds_n[4]" SITE "P14" ;
+LOCATE COMP "oLeds_n[5]" SITE "T15" ;
+LOCATE COMP "oLeds_n[6]" SITE "T14" ;
+LOCATE COMP "oLeds_n[7]" SITE "R14" ;

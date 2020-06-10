@@ -1,0 +1,7 @@
+SET MY_LATTICE=C:\lscc\diamond\3.10_x64
+
+SET LM_LICENSE_FILE=%MY_LATTICE%\license\license.dat
+SET PATH=%MY_LATTICE%\bin\nt64;C:\Windows;C:\Windows\System32
+
+EXIT /B
+
