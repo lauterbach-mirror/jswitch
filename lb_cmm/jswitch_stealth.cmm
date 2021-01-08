@@ -32,7 +32,7 @@ JTAG.SHIFTTMS 0 0 0 0 0 0 0 0 1 1 1 1 1
 
 JTAG.UNLOCK
 
-END
+ENDDO
 
 
 // Address:

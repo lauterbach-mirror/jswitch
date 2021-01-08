@@ -14,7 +14,7 @@ JTAG.SHIFTTMS 1 1 1 1 1 1 1 1 1 1 0 0 0 0
 GOSUB rstRegs
 JTAG.UNLOCK
 
-END
+ENDDO
 
 
 rstRegs:
