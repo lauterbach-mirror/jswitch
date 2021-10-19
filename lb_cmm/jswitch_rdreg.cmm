@@ -11,6 +11,12 @@
 
 PARAMETERS &addr
 
+IF SYStem.CONFIG.DEBUGPORTTYPE()!="JTAG"
+(
+  PRINT %ERROR "JTAG Switcher scripts require debug port type JTAG"
+  ENDDO
+)
+
 LOCAL &value
 
 // make sure we use setting of SYStem.JtagClock

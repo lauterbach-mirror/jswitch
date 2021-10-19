@@ -5,6 +5,12 @@
 //   RUN jswitch_stealth "<JTAG slave TAP to select>"
 PARAMETERS &devsel
 
+IF SYStem.CONFIG.DEBUGPORTTYPE()!="JTAG"
+(
+  PRINT %ERROR "JTAG Switcher scripts require debug port type JTAG"
+  ENDDO
+)
+
 IF (&devsel<1)||(&devsel>8)
 (
   PRINT %ERROR "Illegal Port. Exiting ..."

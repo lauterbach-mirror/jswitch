@@ -2,6 +2,12 @@
 //   RUN jswitch_wrreg "<address>" "<value>"
 PARAMETERS &addr &value
 
+IF SYStem.CONFIG.DEBUGPORTTYPE()!="JTAG"
+(
+  PRINT %ERROR "JTAG Switcher scripts require debug port type JTAG"
+  ENDDO
+)
+
 // make sure we use setting of SYStem.JtagClock
 // as JTAG TCK frequency
 JTAG.USECLOCK ON
