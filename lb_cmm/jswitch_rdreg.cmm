@@ -1,12 +1,16 @@
 // Use this after "jswitch_rst" or "jswitch_deselect_all"
 // If chain has not de-selected everything, this will NOT work.
+//
 // Call with
 //   RUN jswitch_rdreg "<address>"
-// Format of address:
-//   Bit 19..16  BANK number (use 0xF for global register)
-//   Bit 11..0   Register address
+//
+//   <address>
+//     Format:
+//       Bit 19..16  BANK number (use 0xF for global register)
+//       Bit 11..0   Register address
+//
 // Example:
-//   RUN jswitch_rdreg 0xF0000
+//   RUN jswitch_rdreg "0xF0000"
 // => Reads global ConfigA register.
 
 PARAMETERS &addr
@@ -19,15 +23,18 @@ IF SYStem.CONFIG.DEBUGPORTTYPE()!="JTAG"
 
 LOCAL &value
 
+// Lock JTAG for exclusive access
+JTAG.LOCK
+
 // make sure we use setting of SYStem.JtagClock
 // as JTAG TCK frequency
 JTAG.USECLOCK ON
 
-JTAG.LOCK
 // Go through Test-Logic-Reset to Run-Test/Idle
 JTAG.SHIFTTMS 1 1 1 1 1 1 1 1 1 1 0 0 0 0
 GOSUB rdReg "&addr"
 RETURNVALUES &value
+
 JTAG.UNLOCK
 
 PRINT "Address: 0x"+format.hex(1.,&addr)+" -> Read: 0x"+format.hex(4.,&value)
@@ -47,8 +54,8 @@ rdReg:
   // Exit1IR->Shift-DR
   JTAG.SHIFTTMS 1 0 1 0 0
   // bit 15..12 bank
-  // bit  2..0  address
-  &dr=((&addr)&0x7)|(((&addr)&0xF0000)>>4.)
+  // bit 11..0  address
+  &dr=((&addr)&0xFFF)|(((&addr)&0xF0000)>>4.)
   JTAG.SHIFTREG %WORD  &dr
   // Exit1DR->Shift-IR
   JTAG.SHIFTTMS 1 0 1 1 0 0

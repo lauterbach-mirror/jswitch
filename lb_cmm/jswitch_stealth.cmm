@@ -17,11 +17,13 @@ IF (&devsel<1)||(&devsel>8)
   ENDDO
 )
 
+// Lock JTAG for exclusive access
+JTAG.LOCK
+
 // make sure we use setting of SYStem.JtagClock
 // as JTAG TCK frequency
 JTAG.USECLOCK ON
 
-JTAG.LOCK
 // Go through Test-Logic-Reset to SelDR
 JTAG.SHIFTTMS 1 1 1 1 1 1 1 1 1 1 0 0 0 0 1
 &devsel=(0x1)<<(((&devsel)-1)*2)
@@ -43,7 +45,7 @@ ENDDO
 
 // Address:
 //   Bit 19..16   bank
-//   Bit  2..0    address
+//   Bit 11..0    address
 wrReg:
   PARAMETERS &addr &val
   LOCAL &dr
@@ -51,7 +53,7 @@ wrReg:
   //   bit 31..28 bank
   //   bit 18..16 address
   //   bit 15..0  data to write
-  &dr=(((&addr)&0xF0000)<<12.)|(((&addr)&0x7)<<16.)|((&val)&0xFFFF)
+  &dr=(((&addr)&0xF0000)<<12.)|(((&addr)&0xFFF)<<16.)|((&val)&0xFFFF)
 
   // SelDR -> Shift-IR
   JTAG.SHIFTTMS 1 0 0

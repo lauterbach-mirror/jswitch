@@ -11,11 +11,13 @@ IF SYStem.CONFIG.DEBUGPORTTYPE()!="JTAG"
   ENDDO
 )
 
+// Lock JTAG for exclusive access
+JTAG.LOCK
+
 // make sure we use setting of SYStem.JtagClock
 // as JTAG TCK frequency
 JTAG.USECLOCK ON
 
-JTAG.LOCK
 // Go through Test-Logic-Reset to Run-Test/Idle
 JTAG.SHIFTTMS 1 1 1 1 1 1 1 1 1 1 0 0 0 0
 GOSUB rstSelectRegs
