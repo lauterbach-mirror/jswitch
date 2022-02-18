@@ -81,6 +81,8 @@ ShowDialog: ;()
     BUTTON "Full Reset"
     (
       JTAG.SEQuence.Execute TLRJSwitchReset
+      DIALOG.END
+      DO "&sPpd/jswitch_dialog.cmm"
     )
     BUTTON "Discover Features"
     (
