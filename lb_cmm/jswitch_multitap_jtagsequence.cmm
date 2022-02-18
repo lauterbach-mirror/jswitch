@@ -1,5 +1,5 @@
 ; --------------------------------------------------------------------------------
-; @Title: Handle JSwitch within a ARM/ARM64/TRICORE debugsession
+; @Title: Handle JSwitch within a ARM/ARM64/RISCV/TRICORE debugsession
 ; @Description:
 ;   Parameters:
 ;     IRPRE=<x>  - JTAG coordinates behind the JSWITCH Port, x must be decimal
@@ -25,7 +25,7 @@
 ; @Board: JSwitch "TheKraken" IP
 ; @Keywords: JSWITCH
 ; @Author: AME
-; @Copyright: (C) 1989-2019 Lauterbach GmbH, licensed for use with TRACE32(R) only
+; @Copyright: (C) 1989-2022 Lauterbach GmbH, licensed for use with TRACE32(R) only
 ; --------------------------------------------------------------------------------
 ; $Id: f77c2fd5104aba37d49cea463d5df2290936f4da $
 
@@ -357,6 +357,10 @@ getDutIrWidth: ;()
   ELSE IF CPUFAMILY()=="CEVA-X"
   (
     &nDutIrWidth=32.
+  )
+  ELSE IF CPUFAMILY()=="RISCV"
+  (
+    &nDutIrWidth=5.
   )
   ELSE
   (
