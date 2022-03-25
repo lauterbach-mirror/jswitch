@@ -26,7 +26,7 @@ IF !(JTAG.SEQuence.EXIST(TLRJSwitchReset)&&JTAG.SEQuence.EXIST(TLRJSwitchWriteRe
   DO ~~~~/jswitch_jtagsequence_lib.cmm
 )
 
-IF !DIALOG.EXIST(P.0)
+IF !WINdow.EXIST(JSWDLG)
   GOSUB ShowDialog
 
 ENDDO
@@ -41,6 +41,7 @@ ShowDialog: ;()
   DIALOG
   (&+
     HEADER "JtagSwitcher"
+    NAME "JSWDLG"
     POS 0. 0. 11. 1.
     P.0:  CHECKBOX "PORT1" ""
     P.1:  CHECKBOX "PORT2" ""
