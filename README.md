@@ -15,5 +15,6 @@ various JTAG TAPs of the chips on the PCB.
 JTAG Switcher was implemented at [Lauterbach](https://www.lauterbach.com).
 
 Detailed documentation can be found here:
-[JTAG Switcher reference manual](https://gitlab.com/lauterbach/jswitch/uploads/b92ca41bcb0a7fcc106a5c4592971ee5/jswitch_doc_20200610.pdf)
+[JTAG Switcher White Paper](https://www.lauterbach.com/projects_download/jtag_switcher/jtag_switcher_how_to_future_proof_your_jtag_debugging.pdf)
 [JTAG Switcher presentation](https://gitlab.com/lauterbach/jswitch/uploads/67fabf7b82face2d6fb3df6fb0150cb5/jswitch_beamer_20200610.pdf)
+[JTAG Switcher reference manual](https://gitlab.com/lauterbach/jswitch/uploads/b92ca41bcb0a7fcc106a5c4592971ee5/jswitch_doc_20200610.pdf)
