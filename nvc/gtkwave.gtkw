@@ -1,0 +1,46 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Thu Mar  9 18:21:40 2023
+[*]
+[dumpfile] "./work/jswitch_top_tb.fst"
+[dumpfile_mtime] "Thu Mar  9 18:10:59 2023"
+[dumpfile_size] 7455
+[savefile] "./gtkwave.gtkw"
+[timestart] 0
+[size] 1916 1033
+[pos] -1 -1
+*-31.532513 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] jswitch_top_tb.
+[treeopen] jswitch_top_tb.sdut.
+[treeopen] jswitch_top_tb.sdut.sjtagshift.
+[sst_width] 458
+[signals_width] 150
+[sst_expanded] 1
+[sst_vpaned_height] 297
+@28
+jswitch_top_tb.ipintck
+jswitch_top_tb.ipintms
+jswitch_top_tb.ipintdi
+jswitch_top_tb.opintdo
+(1)jswitch_top_tb.oslvtck[2:1]
+(1)jswitch_top_tb.oslvtms[2:1]
+(1)jswitch_top_tb.oslvtdi[2:1]
+(1)jswitch_top_tb.islvtdo[2:1]
+(0)jswitch_top_tb.oslvtck[2:1]
+(0)jswitch_top_tb.oslvtms[2:1]
+(0)jswitch_top_tb.oslvtdi[2:1]
+(0)jswitch_top_tb.islvtdo[2:1]
+jswitch_top_tb.obusmosi.rst
+jswitch_top_tb.obusmosi.rstselect
+jswitch_top_tb.obusmosi.addr[2:0]
+@22
+jswitch_top_tb.obusmosi.bank[3:0]
+jswitch_top_tb.obusmosi.data[15:0]
+@28
+jswitch_top_tb.obusmosi.wrstr
+@29
+jswitch_top_tb.sdut.sjtagshift.rstealthmode
+@28
+jswitch_top_tb.sdut.sjtagshift.rstealthdisable
+[pattern_trace] 1
+[pattern_trace] 0

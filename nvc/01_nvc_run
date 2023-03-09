@@ -1,0 +1,15 @@
+#!/bin/bash
+
+rm -rf work
+
+nvc -a jswitch_config_pkg.vhd
+nvc -a ../src/jswitch_bus_pkg.vhd
+nvc -a ../src/jswitch_internal_pkg.vhd
+nvc -a ../src/jswitch_jtag_machine.vhd
+nvc -a ../src/jswitch_jtag_shift.vhd
+nvc -a ../src/jswitch_int_busmaster.vhd
+nvc -a ../src/jswitch_regs.vhd
+nvc -a ../src/jswitch_top.vhd
+nvc -a jswitch_top_tb.vhd
+nvc -e jswitch_top_tb
+nvc -r jswitch_top_tb --format=fst --wave=./work/jswitch_top_tb.fst
